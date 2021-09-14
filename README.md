@@ -1,7 +1,6 @@
 # elwolf dotfiles
 
-These are the dotfiles deployed by [LARBS](https://larbs.xyz) and as seen on
-[my YouTube channel](https://youtube.com/c/lukesmithxyz).
+These are the dotfiles deployed by [LARBS](https://github.com/elwolf6/LARBS) 
 
 - Very useful scripts are in `~/.local/bin/`
 - Settings for:
