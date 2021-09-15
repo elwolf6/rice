@@ -1,0 +1,23 @@
+{
+    "BDFDB": true,
+    "MessageLoggerV2": true,
+    "PluginRepo": true,
+    "ThemeRepo": true,
+    "ZeresPluginLibrary": true,
+    "XenoLib": true,
+    "BetterVolume": true,
+    "CharCounter": true,
+    "CompleteTimestamps": true,
+    "CreationDate": true,
+    "DoNotTrack": true,
+    "DoubleClickToEdit": true,
+    "EmoteReplacer": true,
+    "GameActivityToggle": true,
+    "GifSaver": true,
+    "InvisibleTyping": true,
+    "Link-Profile-Picture": true,
+    "LinkBanner": true,
+    "OpenSteamLinksInApp": true,
+    "ReadAllNotificationsButton": true,
+    "SecretRingTone": true
+}

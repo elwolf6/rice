@@ -1,0 +1,21 @@
+{
+	"changeLogs": {
+		"CharCounter": "1.5.6",
+		"CompleteTimestamps": "1.5.9",
+		"CreationDate": "1.4.6",
+		"GameActivityToggle": "1.0.4",
+		"OpenSteamLinksInApp": "1.1.4"
+	},
+	"choices": {
+		"toastPosition": "right"
+	},
+	"general": {
+		"showToasts": true,
+		"showSupportBadges": true,
+		"useChromium": false
+	},
+	"hashes": {
+		"0BDFDB.data.json": "e38ca99ef840f7a5f992497a11cec614ca03500f",
+		"0BDFDB.raw.css": "6bb82eb9f45d2d68a03ad2d3e21dcf35a5e2e3ee"
+	}
+}
