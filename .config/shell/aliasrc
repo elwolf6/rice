@@ -19,7 +19,7 @@ alias \
 	bc="bc -ql" \
 	mkd="mkdir -pv" \
 	yt="youtube-dl --add-metadata -i" \
-	yta="yt -x -f bestaudio/best" \
+	yta="yt -x -f bestaudio/best --audio-format mp3" \
 	ffmpeg="ffmpeg -hide_banner"
 
 # Colorize commands when possible.
