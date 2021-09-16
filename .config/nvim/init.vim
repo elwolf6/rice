@@ -213,6 +213,7 @@ let g:coc_global_extensions = [
   \ 'coc-pairs',
   \ 'coc-prettier',
   \ 'coc-clangd',
+  \ 'coc-pyright',
   \ ]
 " from readme
 " if hidden is not set, TextEdit might fail.
