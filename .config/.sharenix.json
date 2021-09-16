@@ -1,0 +1,77 @@
+{
+  "DefaultFileUploader": "Feen.us - elwolf6",
+  "DefaultImageUploader": "Feen.us - elwolf6",
+  "DefaultUrlShortener": "Feen.us Link Shortener - elwolf6",
+  "XineramaHead": 0,
+  "NotificationTime": 30,
+  "NotifyUploading": true,
+  "NotifyCommand": "",
+  "ClipboardTime": 5,
+  "SaveFolder": ".local/share/sharenix",
+  "OrganizedFolders": false,
+
+  "Services": [
+    {
+        "Name": "Feen.us Link Shortener - elwolf6",
+        "DestinationType": "URLShortener",
+        "RequestType": "POST",
+        "RequestURL": "https://feen.us/upload",
+        "Arguments": {
+            "secret": "A5496207B17250D9CFAD9E73F181ED929DAAC",
+            "link": "$input$"
+        },
+        "ResponseType": "Text",
+        "URL": "$json:link$"
+    },
+    {
+        "Name": "Feen.us - elwolf6",
+        "DestinationType": "ImageUploader, TextUploader, FileUploader",
+        "RequestType": "POST",
+        "RequestURL": "https://feen.us/upload",
+        "FileFormName": "file",
+        "Arguments": {
+            "secret": "A5496207B17250D9CFAD9E73F181ED929DAAC"
+    },
+    "ResponseType": "Text",
+    "URL": "$json:file$"
+    },
+    {
+      "Name": "waa.ai",
+      "RequestType": "GET",
+      "RequestURL": "https://api.waa.ai/shorten",
+      "Arguments": {
+        "url": "$input$"
+      },
+      "URL": "$json:data.url$",
+      "DeletionURL": "$json:data.delete_link$"
+    },
+    {
+      "Name": "uguu.se",
+      "RequestType": "POST",
+      "RequestURL": "https://uguu.se/api.php?d=upload-tool",
+      "FileFormName": "file"
+    },
+    {
+      "Name": "imgur.com",
+      "RequestType": "POST",
+      "Headers": {
+        "Authorization": "Client-ID b972ecca954f246"
+      },
+      "RequestURL": "https://api.imgur.com/3/image",
+      "FileFormName": "image",
+      "Arguments": {
+        "type": "file"
+      },
+      "URL": "$json:data.link$",
+      "DeletionURL": "https://imgur.com/delete/$json:data.deletehash$"
+    },
+    {
+      "Name": "owncloud (demo)",
+      "RequestType": "PUT",
+      "RequestURL": "https://demo.owncloud.org/remote.php/webdav/%yy-%mo-%d_%h-%mi-%s_$n$$extension$",
+      "Username": "test",
+      "Password": "test",
+      "ResponseType": "RedirectionURL"
+    }
+  ]
+}
