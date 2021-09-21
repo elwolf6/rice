@@ -14,6 +14,12 @@ unclutter &		# Remove mouse when idle
 ckb-next &		# keyboard and mouse RGB
 slstatus &		# the bar
 
+pamixer -u --set-volume 80 &
+pamixer --source 2 -u --set-volume 50 &
+
+discord &
+betterdiscordctl install
+
 # This line autostarts an instance of Pulseaudio that does not exit on idle.
 # This is "necessary" on Artix due to a current bug between PA and
 # Chromium-based browsers where they fail to start PA and use dummy output.
