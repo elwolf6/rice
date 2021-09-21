@@ -17,7 +17,7 @@
         "RequestType": "POST",
         "RequestURL": "https://feen.us/upload",
         "Arguments": {
-            "secret": "A5496207B17250D9CFAD9E73F181ED929DAAC",
+            "secret": "A5496207B17250D9CFAD9E73F181ED929DAACB9C",
             "link": "$input$"
         },
         "ResponseType": "Text",
