@@ -14,8 +14,8 @@ unclutter &		# Remove mouse when idle
 ckb-next &		# RGB for corsair peripherals
 slstatus &		# the bar
 
-pamixer -u --set-volume 80 &
-pamixer --source 2 -u --set-volume 50 &
+# pamixer -u --set-volume 80 &
+# pamixer --source 2 -u --set-volume 50 &
 
 # This line autostarts an instance of Pulseaudio that does not exit on idle.
 # This is "necessary" on Artix due to a current bug between PA and
