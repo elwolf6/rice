@@ -30,7 +30,7 @@
         "RequestURL": "https://feen.us/upload",
         "FileFormName": "file",
         "Arguments": {
-            "secret": "A5496207B17250D9CFAD9E73F181ED929DAAC"
+            "secret": "A5496207B17250D9CFAD9E73F181ED929DAACB9C"
     },
     "ResponseType": "Text",
     "URL": "$json:file$"
