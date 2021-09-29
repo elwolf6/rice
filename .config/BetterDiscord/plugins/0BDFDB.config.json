@@ -1,10 +1,14 @@
 {
 	"changeLogs": {
+		"BDFDB": "1.9.0",
 		"CharCounter": "1.5.6",
 		"CompleteTimestamps": "1.5.9",
 		"CreationDate": "1.4.6",
 		"GameActivityToggle": "1.0.4",
-		"OpenSteamLinksInApp": "1.1.4"
+		"ImageUtilities": "4.4.9",
+		"OpenSteamLinksInApp": "1.1.4",
+		"ShowHiddenChannels": "3.0.2",
+		"StaffTag": "1.4.8"
 	},
 	"choices": {
 		"toastPosition": "right"
@@ -15,7 +19,7 @@
 		"useChromium": false
 	},
 	"hashes": {
-		"0BDFDB.data.json": "e38ca99ef840f7a5f992497a11cec614ca03500f",
+		"0BDFDB.data.json": "90b6f8533c5b99a70c60e60f3416937c7a0914bb",
 		"0BDFDB.raw.css": "6bb82eb9f45d2d68a03ad2d3e21dcf35a5e2e3ee"
 	}
 }
