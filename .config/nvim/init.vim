@@ -19,7 +19,6 @@ Plug 'jreybert/vimagit'
 Plug 'lukesmithxyz/vimling'
 Plug 'arcticicestudio/nord-vim'
 Plug 'bling/vim-airline'
-Plug 'tpope/vim-commentary'
 Plug 'ap/vim-css-color'
 Plug 'ctrlpvim/ctrlp.vim' " fuzzy find files
 Plug 'scrooloose/nerdcommenter'
@@ -36,7 +35,7 @@ set noshowmode
 set noruler
 set laststatus=0
 set noshowcmd
-
+set nowrap
 " Some basics:
 	nnoremap c "_c
 	set nocompatible
@@ -60,11 +59,11 @@ set noshowcmd
 " Nerd tree
 	map <leader>n :NERDTreeToggle<CR>
 	autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-    if has('nvim')
-        let NERDTreeBookmarksFile = stdpath('data') . '/NERDTreeBookmarks'
-    else
-        let NERDTreeBookmarksFile = '~/.vim' . '/NERDTreeBookmarks'
-    endif
+    	if has('nvim')
+        	let NERDTreeBookmarksFile = stdpath('data') . '/NERDTreeBookmarks'
+    	else
+        	let NERDTreeBookmarksFile = '~/.vim' . '/NERDTreeBookmarks'
+    	endif
 
 " vimling:
 	nm <leader><leader>d :call ToggleDeadKeys()<CR>
@@ -171,9 +170,9 @@ endfunction
 nmap <C-b> :call NTToggle()<CR>
 
 " open NERDTree automatically
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * NERDTreeFind
-autocmd VimEnter * wincmd p
+"autocmd StdinReadPre * let s:std_in=1
+"autocmd VimEnter * NERDTreeFind
+"autocmd VimEnter * wincmd p
 
 let g:NERDTreeGitStatusWithFlags = 1
 "let g:WebDevIconsUnicodeDecorateFolderNodes = 1
@@ -211,9 +210,9 @@ autocmd BufEnter * call SyncTree()
 let g:coc_global_extensions = [
   \ 'coc-snippets',
   \ 'coc-pairs',
-  \ 'coc-prettier',
   \ 'coc-clangd',
   \ 'coc-pyright',
+  \ 'coc-json',
   \ ]
 " from readme
 " if hidden is not set, TextEdit might fail.
