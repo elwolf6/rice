@@ -169,10 +169,11 @@ endfunction
 
 nmap <C-b> :call NTToggle()<CR>
 
-" open NERDTree automatically
-"autocmd StdinReadPre * let s:std_in=1
-"autocmd VimEnter * NERDTreeFind
-"autocmd VimEnter * wincmd p
+" (don't) :^) open NERDTree automatically
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * NERDTreeFind
+autocmd VimEnter * wincmd p
+autocmd VimEnter * NERDTreeToggle
 
 let g:NERDTreeGitStatusWithFlags = 1
 "let g:WebDevIconsUnicodeDecorateFolderNodes = 1
