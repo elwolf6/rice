@@ -18,3 +18,5 @@ killall NetworkManager
 sv up NetworkManager
 
 rm -rf /home/elwolf/go
+rm runit-autism.sh
+shutdown -r now
