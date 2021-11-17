@@ -19,5 +19,8 @@
     "LinkBanner": true,
     "OpenSteamLinksInApp": true,
     "ReadAllNotificationsButton": true,
-    "SecretRingTone": true
+    "SecretRingTone": true,
+    "ImageUtilities": false,
+    "ShowHiddenChannels": false,
+    "StaffTag": false
 }
