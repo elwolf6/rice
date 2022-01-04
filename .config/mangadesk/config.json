@@ -1,0 +1,11 @@
+{
+	"downloadDir": "/home/elwolf/Manga",
+	"languages": [
+		"en"
+	],
+	"downloadQuality": "data",
+	"explicitContent": false,
+	"forcePort443": false,
+	"asZip": false,
+	"zipType": "zip"
+}
