@@ -84,5 +84,16 @@
 		unset LF_TEMPDIR
 	}
 
-#Load syntax highlighting; should be last.
-source /usr/share/zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh 2>/dev/null
+	neofetch
+	lf () {
+		LF_TEMPDIR="$(mktemp -d -t lf-tempdir-XXXXXX)"
+		LF_TEMPDIR="$LF_TEMPDIR" lf-run -last-dir-path="$LF_TEMPDIR/lastdir" "$@"
+		if [ "$(cat "$LF_TEMPDIR/cdtolastdir" 2>/dev/null)" -eq 1 ]; then
+			cd "$(cat "$LF_TEMPDIR/lastdir")"
+		fi
+		rm -r "$LF_TEMPDIR"
+		unset LF_TEMPDIR
+	}
+
+	#Load syntax highlighting; should be last.
+	source /usr/share/zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh 2>/dev/null
