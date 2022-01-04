@@ -14,7 +14,7 @@ unsetopt PROMPT_SP
 
 # Default programs:
 export EDITOR="nvim"
-export TERMINAL="st"
+export TERMINAL="terminology"
 export BROWSER="firefox"
 
 # ~/ Clean-up:

@@ -91,7 +91,7 @@
 		if [ "$(cat "$LF_TEMPDIR/cdtolastdir" 2>/dev/null)" -eq 1 ]; then
 			cd "$(cat "$LF_TEMPDIR/lastdir")"
 		fi
-		rm -r "$LF_TEMPDIR"
+		rm -r "$LF_TEMPDIR" --force # use --force not -f because rm is alliased to "rm -vI" and the prompt is annoying
 		unset LF_TEMPDIR
 	}
 
