@@ -20,7 +20,8 @@
     "OpenSteamLinksInApp": true,
     "ReadAllNotificationsButton": true,
     "SecretRingTone": true,
-    "ImageUtilities": false,
-    "ShowHiddenChannels": false,
-    "StaffTag": false
+    "ImageUtilities": true,
+    "ShowHiddenChannels": true,
+    "StaffTag": true,
+    "BetterMediaPlayer": true
 }
