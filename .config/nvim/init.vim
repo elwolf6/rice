@@ -37,6 +37,8 @@ set noshowmode
 set noruler
 set laststatus=2
 set noshowcmd
+set tabstop=4
+set shiftwidth=4
 
 let g:lightline = {
       \ 'colorscheme': 'nord',
@@ -68,7 +70,9 @@ let g:lightline = {
 	map <leader>o :setlocal spell! spelllang=en_us<CR>
 " Splits open at the bottom and right, which is non-retarded, unlike vim defaults.
 	set splitbelow splitright
-
+" Nerd Commenter
+	vmap <C-_> <plug>NERDCommenterToggle
+	nmap <C-_> <plug>NERDCommenterToggleefault mappings
 " C++ syntax highlighting
 	let g:cpp_class_scope_highlight = 1
 	let g:cpp_member_variable_highlight = 1
