@@ -11,14 +11,15 @@
          },
          "client": {
           "snippetSupport": true
-         }
+         },
+		 "highlight": {
+			 "lsRanges": true
+		 },
+		 "index": {
+			 "onChange": true
+		 }
        }
     }
-  },
- "initializationOptions": {
-   "index": {
-      "onChange": true
-    },
-   "highlight": { "lsRanges" : true }
+
   }
 }
