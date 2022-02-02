@@ -84,7 +84,6 @@
 		unset LF_TEMPDIR
 	}
 
-	neofetch
 	lf () {
 		LF_TEMPDIR="$(mktemp -d -t lf-tempdir-XXXXXX)"
 		LF_TEMPDIR="$LF_TEMPDIR" lf-run -last-dir-path="$LF_TEMPDIR/lastdir" "$@"
