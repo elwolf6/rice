@@ -14,6 +14,11 @@ unclutter &		# Remove mouse when idle
 ckb-next &		# RGB for corsair peripherals
 slstatus &		# the bar
 
+ckb-next-daemon &
+pipewire &
+pipewire-pulse &
+pipewire-media-session &
+
 # pamixer -u --set-volume 80 &
 # pamixer --source 2 -u --set-volume 50 &
 
