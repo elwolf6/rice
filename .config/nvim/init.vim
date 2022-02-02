@@ -22,7 +22,6 @@ Plug 'ryanoasis/vim-devicons'
 Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
-Plug 'jackguo380/vim-lsp-cxx-highlight'
 call plug#end()
 
 colorscheme nord
@@ -73,10 +72,6 @@ let g:lightline = {
 " Nerd Commenter
 	vmap <C-_> <plug>NERDCommenterToggle
 	nmap <C-_> <plug>NERDCommenterToggleefault mappings
-" C++ syntax highlighting
-	let g:cpp_class_scope_highlight = 1
-	let g:cpp_member_variable_highlight = 1
-	let g:cpp_class_decl_highlight = 1
 
 " Nerd tree
 	map <leader>n :NERDTreeToggle<CR>
