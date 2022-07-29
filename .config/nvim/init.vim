@@ -22,6 +22,7 @@ Plug 'ryanoasis/vim-devicons'
 Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'cloudhead/neovim-fuzzy'
 call plug#end()
 
 colorscheme nord
@@ -90,6 +91,10 @@ let g:lightline = {
 
 " Replace ex mode with gq
 	map Q gq
+
+" Fuzzy find
+
+	nnoremap <C-p> :FuzzyOpen<CR>
 
 " Check file in shellcheck:
 	map <leader>s :!clear && shellcheck -x %<CR>
@@ -182,6 +187,7 @@ let g:coc_global_extensions = [
   \ 'coc-pairs',
   \ 'coc-clangd',
   \ 'coc-json',
+  \ 'coc-pyright',
   \ ]
 " from readme
 " if hidden is not set, TextEdit might fail.
