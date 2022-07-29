@@ -1,7 +1,7 @@
 /**
  * @name EmoteReplacer
  * @authorId 68834122860077056
- * @version 1.11.2
+ * @version 1.11.6
  * @website https://github.com/Yentis/betterdiscord-emotereplacer
  * @source https://raw.githubusercontent.com/Yentis/betterdiscord-emotereplacer/master/EmoteReplacer.plugin.js
  */
@@ -16,7 +16,7 @@
                 github_username: 'Yentis',
                 twitter_username: 'yentis178'
             }],
-            version: '1.11.2',
+            version: '1.11.6',
             description: 'Check for known emote names and replace them with an embedded image of the emote. Also supports modifiers similar to BetterDiscord\'s emotes. Standard emotes: https://yentis.github.io/emotes/',
             github: 'https://github.com/Yentis/betterdiscord-emotereplacer',
             github_raw: 'https://raw.githubusercontent.com/Yentis/betterdiscord-emotereplacer/master/EmoteReplacer.plugin.js'
@@ -25,27 +25,9 @@
 			title: 'Fixed',
 			type: 'fixed',
 			items: [
-				'----------1.11.2----------',
-				'Plugin not starting',
-				'----------1.11.0----------',
-                'Animated emotes being posted as PNGs instead of GIFs',
-                'Emotes disabled due to expired server boost could not be used'
+				'Custom emote menu not listing emotes.'
 			]
-		}, {
-            title: 'Improved',
-            type: 'improved',
-            items: [
-				'----------1.11.0----------',
-                'Disable plugin in channels where images cannot be sent'
-            ]
-        }, {
-            title: 'Added',
-            type: 'added',
-            items: [
-				'----------1.11.0----------',
-                'Modifier autocomplete window now has usage info'
-            ]
-        }],
+		}],
         defaultConfig: [{
             id: 'emoteSize',
             value: 48
@@ -67,6 +49,9 @@
         }, {
             id: 'resizeMethod',
             value: 'smallest'
+        }, {
+            id: 'showStandardEmotes',
+            value: true
         }]
     };
 
@@ -109,6 +94,8 @@
     const Dispatcher = BdApi.findModuleByProps('dispatch', 'dirtyDispatch');
     const Permissions = BdApi.findModuleByProps('getChannelPermissions');
     const DiscordPermissions = BdApi.findModuleByProps('Permissions', 'ActivityTypes', 'StatusTypes').Permissions;
+    const ComponentDispatch = BdApi.findModuleByProps('ComponentDispatch').ComponentDispatch;
+    const Draft = BdApi.findModuleByProps('changeDraft');
 
     const baseGifsicleUrl = 'https://raw.githubusercontent.com/imagemin/gifsicle-bin/v4.0.1/vendor/';
 
@@ -156,7 +143,7 @@
             );
 
             Patcher.before(
-                BdApi.findModuleByProps('changeDraft'),
+                Draft,
                 'changeDraft',
                 (_, args) => this.onChangeDraft(args)
             );
@@ -356,9 +343,12 @@
             const emojiText = `<${emoji.animated ? 'a' : ''}${allNamesString}${emoji.id}>`;
 
             const result = {};
+            const url = emoji.url.split('?')[0]
+            const extensionIndex = url.lastIndexOf('.')
+
             result[emojiText] = {
                 name: emojiName,
-                url: emoji.url.split('?')[0]
+                url: url.substring(extensionIndex) === '.webp' ? `${url.substring(0, extensionIndex)}.png` : url
             };
 
             const foundEmote = this.getTextPos(message.content, result);
@@ -582,7 +572,7 @@
             refreshButton.textContent = 'Refresh emote list';
             const refreshSettingField = new Settings.SettingField(null, null, null, refreshButton);
 
-            const refreshListener = { element: refreshButton, name: 'click', callback: (_e) => { this.onRefreshClick() } };
+            const refreshListener = { element: refreshButton, name: 'click', callback: (_e) => { this.refreshEmotes() } };
             refreshButton.addEventListener(refreshListener.name, refreshListener.callback);
             this.listeners.push(refreshListener);
             settings.push(refreshSettingField);
@@ -627,6 +617,16 @@
                 'If this is enabled, the autocomplete list will not be shown unless the prefix is also typed.',
                 this.settings.requirePrefix,
                 (checked) => { this.settings.requirePrefix = checked; }
+            ));
+
+            settings.push(new Settings.Switch(
+                'Show standard custom emotes',
+                'If this is enabled, the standard custom emotes will be visible.',
+                this.settings.showStandardEmotes,
+                (checked) => {
+                    this.settings.showStandardEmotes = checked;
+                    this.refreshEmotes();
+                }
             ));
 
             settings.push(new Settings.Textbox(
@@ -783,19 +783,25 @@
                 const data = matchList[i][1];
 
                 const emoteRow = document.createElement('div');
-                this.addClasses(emoteRow, this.DiscordClassModules.Autocomplete.autocompleteRowVertical, this.DiscordClassModules.Autocomplete.autocompleteRowVerticalSmall);
+                emoteRow.setAttribute('aria-disabled', 'false');
+                this.addClasses(
+                    emoteRow,
+                    this.DiscordClassModules.Autocomplete.clickable,
+                    this.DiscordClassModules.Autocomplete.autocompleteRowVertical,
+                    this.DiscordClassModules.Autocomplete.autocompleteRowVerticalSmall
+                );
 
                 const mouseEnterListener = {
                     element: emoteRow, name: 'mouseenter', callback: (_e) => {
                         this.cached.selectedIndex = i + firstIndex;
 
                         for (const child of titleRow.parentElement.children) {
+                            child.setAttribute('aria-selected', 'false');
+
                             for (const nestedChild of child.children) {
-                                this.removeClasses(nestedChild, this.DiscordClassModules.Autocomplete.selected);
-                                this.addClasses(nestedChild, this.DiscordClassModules.Autocomplete.base, this.DiscordClassModules.Autocomplete.selectable);
+                                this.addClasses(nestedChild, this.DiscordClassModules.Autocomplete.base);
                             }
                         }
-                        this.addClasses(emoteSelector, this.DiscordClassModules.Autocomplete.selected);
                     }
                 };
                 emoteRow.addEventListener(mouseEnterListener.name, mouseEnterListener.callback);
@@ -815,11 +821,11 @@
                 autocompleteInnerDiv.append(emoteRow);
 
                 const emoteSelector = document.createElement('div');
-                this.addClasses(emoteSelector, this.DiscordClassModules.Autocomplete.base, this.DiscordClassModules.Autocomplete.selectable);
+                this.addClasses(emoteSelector, this.DiscordClassModules.Autocomplete.base);
                 emoteRow.append(emoteSelector);
 
                 if (i + firstIndex === selectedIndex) {
-                    this.addClasses(emoteSelector, this.DiscordClassModules.Autocomplete.selected);
+                    emoteRow.setAttribute('aria-selected', 'true');
                 }
 
                 const emoteContainer = document.createElement('div');
@@ -869,6 +875,7 @@
 
         addClasses(element, ...classes) {
             for (const curClass of classes) {
+                if (!curClass) continue;
                 const split = curClass.split(' ');
 
                 for (const curClassItem of split) {
@@ -879,6 +886,7 @@
 
         removeClasses(element, ...classes) {
             for (const curClass of classes) {
+                if (!curClass) continue;
                 const split = curClass.split(' ');
 
                 for (const curClassItem of split) {
@@ -887,7 +895,7 @@
             }
         }
 
-        onRefreshClick() {
+        refreshEmotes() {
             this.emoteNames = null;
             BdApi.showToast('Reloading emote database...', { type: 'info' });
             this.getEmoteNames()
@@ -929,6 +937,11 @@
 
         getEmoteNames() {
             return new Promise((resolve, reject) => {
+                if (!this.settings.showStandardEmotes) {
+                    resolve({});
+                    return;
+                }
+
                 require('https').get('https://raw.githubusercontent.com/Yentis/yentis.github.io/master/emotes/emotes.json', (res) => {
                     let data = '';
 
@@ -1106,14 +1119,14 @@
 
         insertSelectedCompletion() {
             const { completions, matchText, selectedIndex } = this.cached;
+            const curDraft = this.draft;
+            const matchTextLength = matchText?.length || 0;
 
             if (completions === undefined) {
                 return;
             }
 
-            for (let i = 0; i < matchText?.length || 0; i++) {
-                document.execCommand('delete');
-            }
+            Draft.clearDraft(SelectedChannelStore.getChannelId(), 0);
 
             let selectedCompletion = completions[selectedIndex];
             let suffix = ' ';
@@ -1125,8 +1138,8 @@
             }
             selectedCompletion[0] += suffix;
 
-            document.execCommand('insertText', false, selectedCompletion[0]);
-
+            const newDraft = curDraft.substring(0, curDraft.length - matchTextLength);
+            ComponentDispatch.dispatch('INSERT_TEXT', { plainText: newDraft + selectedCompletion[0] });
             this.destroyCompletions();
         }
 
@@ -1424,21 +1437,14 @@
         }
 
         uploadFile(fileData, fullName, emote) {
-            // 1 = channel ID
-            // 2 = File
-            // 3 = no idea, this is usually 0
-            // 4 = message
-            // 5 = spoiler
-            // 6 = filename
-
-            Uploader.upload(
-                emote.channel,
-                new File([fileData], fullName),
-                0,
-                { content: emote.content, invalidEmojis: [], tts: false },
-                emote.spoiler,
-                fullName
-            );
+            Uploader.upload({
+                channelId: emote.channel,
+                file: new File([fileData], fullName),
+                draftType: 0,
+                message: { content: emote.content, invalidEmojis: [], tts: false, channel_id: emote.channel },
+                hasSpoiler: emote.spoiler,
+                filename: fullName,
+            });
         }
 
         compress(originalFile, commands, callback) {

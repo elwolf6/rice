@@ -2,7 +2,7 @@
  * @name PluginRepo
  * @author DevilBro
  * @authorId 278543574059057154
- * @version 2.2.6
+ * @version 2.3.4
  * @description Allows you to download all Plugins from BD's Website within Discord
  * @invite Jx3TjNS
  * @donate https://www.paypal.me/MircoWittrien
@@ -17,20 +17,12 @@ module.exports = (_ => {
 		"info": {
 			"name": "PluginRepo",
 			"author": "DevilBro",
-			"version": "2.2.6",
+			"version": "2.3.4",
 			"description": "Allows you to download all Plugins from BD's Website within Discord"
 		}
 	};
 
-	return (window.Lightcord && !Node.prototype.isPrototypeOf(window.Lightcord) || window.LightCord && !Node.prototype.isPrototypeOf(window.LightCord) || window.Astra && !Node.prototype.isPrototypeOf(window.Astra)) ? class {
-		getName () {return config.info.name;}
-		getAuthor () {return config.info.author;}
-		getVersion () {return config.info.version;}
-		getDescription () {return "Do not use LightCord!";}
-		load () {BdApi.alert("Attention!", "By using LightCord you are risking your Discord Account, due to using a 3rd Party Client. Switch to an official Discord Client (https://discord.com/) with the proper BD Injection (https://betterdiscord.app/)");}
-		start() {}
-		stop() {}
-	} : !window.BDFDB_Global || (!window.BDFDB_Global.loaded && !window.BDFDB_Global.started) ? class {
+	return !window.BDFDB_Global || (!window.BDFDB_Global.loaded && !window.BDFDB_Global.started) ? class {
 		getName () {return config.info.name;}
 		getAuthor () {return config.info.author;}
 		getVersion () {return config.info.version;}
@@ -86,7 +78,7 @@ module.exports = (_ => {
 			INSTALLED: {
 				backgroundColor: "var(--bdfdb-green)",
 				icon: "CHECKMARK",
-				text: "USER_SETTINGS_VOICE_INSTALLED_LABEL"
+				text: "installed"
 			},
 			OUTDATED: {
 				backgroundColor: "var(--bdfdb-red)",
@@ -135,7 +127,7 @@ module.exports = (_ => {
 			filterPlugins() {
 				let plugins = grabbedPlugins.map(plugin => {
 					const installedPlugin = _this.getInstalledPlugin(plugin);
-					const state = installedPlugin ? (plugin.version && BDFDB.NumberUtils.compareVersions(plugin.version, _this.getString(installedPlugin.version)) ? pluginStates.OUTDATED : pluginStates.INSTALLED) : pluginStates.DOWNLOADABLE;
+					const state = installedPlugin ? (plugin.version && _this.compareVersions(plugin.version, _this.getString(installedPlugin.version)) ? pluginStates.OUTDATED : pluginStates.INSTALLED) : pluginStates.DOWNLOADABLE;
 					return Object.assign(plugin, {
 						search: [plugin.name, plugin.version, plugin.authorname, plugin.description, plugin.tags].flat(10).filter(n => typeof n == "string").join(" ").toUpperCase(),
 						description: plugin.description || "No Description found",
@@ -221,8 +213,8 @@ module.exports = (_ => {
 								plugin: _this,
 								keys: ["general", key],
 								label: _this.defaults.general[key].description,
-								note: key == "rnmStart" && !automaticLoading && "Automatic Loading has to be enabled",
-								disabled: key == "rnmStart" && !automaticLoading,
+								note: _this.defaults.general[key].autoload && !automaticLoading && "Automatic Loading has to be enabled",
+								disabled: _this.defaults.general[key].autoload && !automaticLoading,
 								value: _this.settings.general[key],
 								onChange: value => {
 									_this.settings.general[key] = value;
@@ -247,7 +239,6 @@ module.exports = (_ => {
 				if (this.props.data.thumbnailUrl && !this.props.data.thumbnailChecked) {
 					if (!window.Buffer) this.props.data.thumbnailChecked = true;
 					else BDFDB.LibraryRequires.request(this.props.data.thumbnailUrl, {encoding: null}, (error, response, body) => {
-						this.props.data.thumbnailChecked = true;
 						if (response && response.headers["content-type"] && response.headers["content-type"] == "image/gif") {
 							const throwAwayImg = new Image(), instance = this;
 							throwAwayImg.onload = function() {
@@ -257,17 +248,24 @@ module.exports = (_ => {
 									const oldUrl = instance.props.data.thumbnailUrl;
 									instance.props.data.thumbnailUrl = canvas.toDataURL("image/png");
 									instance.props.data.thumbnailGifUrl = oldUrl;
+									instance.props.data.thumbnailChecked = true;
 									BDFDB.ReactUtils.forceUpdate(instance);
-								} catch(err) {
+								}
+								catch (err) {
+									instance.props.data.thumbnailChecked = true;
 									BDFDB.ReactUtils.forceUpdate(instance);
 								}
 							};
 							throwAwayImg.onerror = function() {
+								instance.props.data.thumbnailChecked = true;
 								BDFDB.ReactUtils.forceUpdate(instance);
 							};
 							throwAwayImg.src = "data:" + response.headers["content-type"] + ";base64," + (new Buffer(body).toString("base64"));
 						}
-						else BDFDB.ReactUtils.forceUpdate(this);
+						else {
+							this.props.data.thumbnailChecked = true;
+							BDFDB.ReactUtils.forceUpdate(this);
+						}
 					});
 				}
 				return BDFDB.ReactUtils.createElement("div", {
@@ -282,6 +280,7 @@ module.exports = (_ => {
 										this.props.data.thumbnailUrl && this.props.data.thumbnailChecked && BDFDB.ReactUtils.createElement("img", {
 											className: BDFDB.disCN.discoverycardcover,
 											src: this.props.data.thumbnailUrl,
+											loading: "lazy",
 											onMouseEnter: this.props.data.thumbnailGifUrl && (e => e.target.src = this.props.data.thumbnailGifUrl),
 											onMouseLeave: this.props.data.thumbnailGifUrl && (e => e.target.src = this.props.data.thumbnailUrl),
 											onClick: _ => {
@@ -328,6 +327,7 @@ module.exports = (_ => {
 											children: this.props.data.author && this.props.data.author.discord_avatar_hash && this.props.data.author.discord_snowflake && !this.props.data.author.discord_avatar_failed ? BDFDB.ReactUtils.createElement("img", {
 												className: BDFDB.DOMUtils.formatClassName(BDFDB.disCN.discoverycardicon, !this.props.data.author.discord_avatar_loaded && BDFDB.disCN.discoverycardiconloading),
 												src: `https://cdn.discordapp.com/avatars/${this.props.data.author.discord_snowflake}/${this.props.data.author.discord_avatar_hash}.webp?size=128`,
+												loading: "lazy",
 												onLoad: _ => {
 													this.props.data.author.discord_avatar_loaded = true;
 													BDFDB.ReactUtils.forceUpdate(this);
@@ -440,26 +440,41 @@ module.exports = (_ => {
 													installed: this.props.data.state == pluginStates.INSTALLED,
 													outdated: this.props.data.state == pluginStates.OUTDATED,
 													onDownload: _ => {
+														if (this.props.downloading) return;
+														this.props.downloading = true;
+														let loadingToast = BDFDB.NotificationUtils.toast(`${BDFDB.LanguageUtils.LibraryStringsFormat("loading", this.props.data.name)} - ${BDFDB.LanguageUtils.LibraryStrings.please_wait}`, {timeout: 0, ellipsis: true});
+														let autoloadKey = this.props.data.state == pluginStates.OUTDATED ? "startUpdated" : "startDownloaded";
 														BDFDB.LibraryRequires.request(this.props.data.rawSourceUrl, (error, response, body) => {
-															if (error) BDFDB.NotificationUtils.toast(BDFDB.LanguageUtils.LibraryStringsFormat("download_fail", `Plugin "${this.props.data.name}"`), {type: "danger"});
-															else BDFDB.LibraryRequires.fs.writeFile(BDFDB.LibraryRequires.path.join(BDFDB.BDUtils.getPluginsFolder(), this.props.data.rawSourceUrl.split("/").pop()), body, error2 => {
-																if (error2) BDFDB.NotificationUtils.toast(BDFDB.LanguageUtils.LibraryStringsFormat("save_fail", `Plugin "${this.props.data.name}"`), {type: "danger"});
-																else {
-																	BDFDB.NotificationUtils.toast(BDFDB.LanguageUtils.LibraryStringsFormat("save_success", `Plugin "${this.props.data.name}"`), {type: "success"});
-																	if (_this.settings.general.rnmStart) BDFDB.TimeUtils.timeout(_ => {
-																		if (this.props.data.state == pluginStates.INSTALLED && BDFDB.BDUtils.isPluginEnabled(this.props.data.name) == false) {
-																			BDFDB.BDUtils.enablePlugin(this.props.data.name, false);
-																			BDFDB.LogUtils.log(BDFDB.LanguageUtils.LibraryStringsFormat("toast_plugin_started", this.props.data.name), _this);
-																		}
-																	}, 3000);
-																	this.props.data.state = pluginStates.INSTALLED;
-																	BDFDB.ReactUtils.forceUpdate(this);
-																}
-															})
-														})
+															if (error) {
+																delete this.props.downloading;
+																loadingToast.close();
+																BDFDB.NotificationUtils.toast(BDFDB.LanguageUtils.LibraryStringsFormat("download_fail", `Plugin "${this.props.data.name}"`), {type: "danger"});
+															}
+															else {
+																BDFDB.LibraryRequires.fs.writeFile(BDFDB.LibraryRequires.path.join(BDFDB.BDUtils.getPluginsFolder(), this.props.data.rawSourceUrl.split("/").pop()), body, error2 => {
+																	delete this.props.downloading;
+																	loadingToast.close();
+																	if (error2) BDFDB.NotificationUtils.toast(BDFDB.LanguageUtils.LibraryStringsFormat("save_fail", `Plugin "${this.props.data.name}"`), {type: "danger"});
+																	else {
+																		BDFDB.NotificationUtils.toast(BDFDB.LanguageUtils.LibraryStringsFormat("save_success", `Plugin "${this.props.data.name}"`), {type: "success"});
+																		if (_this.settings.general[autoloadKey]) BDFDB.TimeUtils.timeout(_ => {
+																			if (this.props.data.state == pluginStates.INSTALLED && BDFDB.BDUtils.isPluginEnabled(this.props.data.name) == false) {
+																				BDFDB.BDUtils.enablePlugin(this.props.data.name, false);
+																				BDFDB.LogUtils.log(BDFDB.LanguageUtils.LibraryStringsFormat("toast_plugin_started", this.props.data.name), _this);
+																			}
+																		}, 3000);
+																		this.props.data.state = pluginStates.INSTALLED;
+																		BDFDB.ReactUtils.forceUpdate(this);
+																	}
+																});
+															}
+														});
 													},
 													onDelete: _ => {
+														if (this.props.deleting) return;
+														this.props.deleting = true;
 														BDFDB.LibraryRequires.fs.unlink(BDFDB.LibraryRequires.path.join(BDFDB.BDUtils.getPluginsFolder(), this.props.data.rawSourceUrl.split("/").pop()), error => {
+															delete this.props.deleting;
 															if (error) BDFDB.NotificationUtils.toast(BDFDB.LanguageUtils.LibraryStringsFormat("delete_fail", `Plugin "${this.props.data.name}"`), {type: "danger"});
 															else {
 																BDFDB.NotificationUtils.toast(BDFDB.LanguageUtils.LibraryStringsFormat("delete_success", `Plugin "${this.props.data.name}"`));
@@ -497,7 +512,7 @@ module.exports = (_ => {
 					],
 					onClick: _ => {
 						if (this.props.doDelete) typeof this.props.onDelete == "function" && this.props.onDelete();
-						else typeof this.props.onDownload == "function" && this.props.onDownload();
+						else if (!this.props.installed) typeof this.props.onDownload == "function" && this.props.onDownload();
 					},
 					onMouseEnter: this.props.installed ? (_ => {
 						this.props.doDelete = true;
@@ -639,9 +654,10 @@ module.exports = (_ => {
 
 				this.defaults = {
 					general: {
-						notifyOutdated:		{value: true, 	description: "Get a Notification when one of your Plugins is outdated"},
-						notifyNewEntries:	{value: true, 	description: "Get a Notification when there are new Entries in the Repo"},
-						rnmStart:			{value: true, 	description: "Start Plugin after Download"}
+						notifyOutdated:		{value: true, 	autoload: false,	description: "Get a Notification when one of your Plugins is outdated"},
+						notifyNewEntries:	{value: true, 	autoload: false,	description: "Get a Notification when there are new Entries in the Repo"},
+						startDownloaded:	{value: false, 	autoload: true,		description: "Start new Plugins after Download"},
+						startUpdated:		{value: false, 	autoload: true,		description: "Start updated Plugins after Download"}
 					},
 					filters: {
 						updated: 			{value: true,	description: "Updated"},
@@ -661,41 +677,17 @@ module.exports = (_ => {
 				
 			}
 			
-			onStart () {
-				BDFDB.PatchUtils.patch(this, (BDFDB.ModuleUtils.findByName("SettingsView") || {}).prototype, "getPredicateSections", {after: e => {
-					if (BDFDB.ArrayUtils.is(e.returnValue) && e.returnValue.findIndex(n => n.section && (n.section.toLowerCase() == "changelog" || n.section == BDFDB.DiscordConstants.UserSettingsSections.CHANGE_LOG || n.section.toLowerCase() == "logout" || n.section == BDFDB.DiscordConstants.UserSettingsSections.LOGOUT))) {
-						e.returnValue = e.returnValue.filter(n => n.section != "pluginrepo");
-						let index = e.returnValue.indexOf(e.returnValue.find(n => n.section == "themes") || e.returnValue.find(n => n.section == BDFDB.DiscordConstants.UserSettingsSections.DEVELOPER_OPTIONS) || e.returnValue.find(n => n.section == BDFDB.DiscordConstants.UserSettingsSections.HYPESQUAD_ONLINE));
-						if (index > -1) {
-							e.returnValue.splice(index + 1, 0, {
-								section: "pluginrepo",
-								label: "Plugin Repo",
-								element: _ => {
-									let options = Object.assign({}, this.settings.filters);
-									options.updated = options.updated && !showOnlyOutdated;
-									options.outdated = options.outdated || showOnlyOutdated;
-									options.downloadable = options.downloadable && !showOnlyOutdated;
-									options.sortKey = forcedSort || Object.keys(sortKeys)[0];
-									options.orderKey = forcedOrder || Object.keys(orderKeys)[0];
-									
-									return BDFDB.ReactUtils.createElement(RepoListComponent, options, true);
-								}
-							});
-							if (!e.returnValue.find(n => n.section == "plugins")) e.returnValue.splice(index + 1, 0, {section: "DIVIDER"});
-						}
-					}
-				}});
-				
+			onStart () {				
 				this.forceUpdateAll();
 
 				this.loadPlugins();
 
-				updateInterval = BDFDB.TimeUtils.interval(_ => {this.checkForNewPlugins();}, 1000*60*30);
+				updateInterval = BDFDB.TimeUtils.interval(_ => this.checkForNewPlugins(), 1000*60*30);
 			}
 			
 			onStop () {
 				BDFDB.TimeUtils.clear(updateInterval);
-				BDFDB.TimeUtils.clear(loading && loading.timeout);
+				BDFDB.TimeUtils.clear(loading.timeout);
 
 				this.forceUpdateAll();
 
@@ -731,6 +723,31 @@ module.exports = (_ => {
 			
 			processSettingsView (e) {
 				if (e.node) searchString = "";
+				else {
+					if (!BDFDB.PatchUtils.isPatched(this, e.component, "getPredicateSections")) BDFDB.PatchUtils.patch(this, e.component, "getPredicateSections", {after: e2 => {
+						if (BDFDB.ArrayUtils.is(e2.returnValue) && e2.returnValue.findIndex(n => n.section && (n.section.toLowerCase() == "changelog" || n.section == BDFDB.DiscordConstants.UserSettingsSections.CHANGE_LOG || n.section.toLowerCase() == "logout" || n.section == BDFDB.DiscordConstants.UserSettingsSections.LOGOUT))) {
+							e2.returnValue = e2.returnValue.filter(n => n.section != "pluginrepo");
+							let index = e2.returnValue.indexOf(e2.returnValue.find(n => n.section == "themes") || e2.returnValue.find(n => n.section == BDFDB.DiscordConstants.UserSettingsSections.DEVELOPER_OPTIONS) || e2.returnValue.find(n => n.section == BDFDB.DiscordConstants.UserSettingsSections.HYPESQUAD_ONLINE));
+							if (index > -1) {
+								e2.returnValue.splice(index + 1, 0, {
+									section: "pluginrepo",
+									label: "Plugin Repo",
+									element: _ => {
+										let options = Object.assign({}, this.settings.filters);
+										options.updated = options.updated && !showOnlyOutdated;
+										options.outdated = options.outdated || showOnlyOutdated;
+										options.downloadable = options.downloadable && !showOnlyOutdated;
+										options.sortKey = forcedSort || Object.keys(sortKeys)[0];
+										options.orderKey = forcedOrder || Object.keys(orderKeys)[0];
+										
+										return BDFDB.ReactUtils.createElement(RepoListComponent, options, true);
+									}
+								});
+								if (!e2.returnValue.find(n => n.section == "plugins")) e2.returnValue.splice(index + 1, 0, {section: "DIVIDER"});
+							}
+						}
+					}});
+				}
 			}
 			
 			processStandardSidebarView (e) {
@@ -832,7 +849,7 @@ module.exports = (_ => {
 								if (version) {
 									plugin.version = version;
 									const installedPlugin = this.getInstalledPlugin(plugin);
-									if (installedPlugin && BDFDB.NumberUtils.compareVersions(version, this.getString(installedPlugin.version))) outdatedEntries++;
+									if (installedPlugin && this.compareVersions(version, this.getString(installedPlugin.version))) outdatedEntries++;
 								}
 							}
 							if (!cachedPlugins.includes(plugin.id)) newEntries++;
@@ -849,7 +866,7 @@ module.exports = (_ => {
 				};
 				
 				BDFDB.LibraryRequires.request("https://api.betterdiscord.app/v1/store/plugins", (error, response, body) => {
-					if (!error && body) try {
+					if (!error && body && response.statusCode == 200) try {
 						grabbedPlugins = BDFDB.ArrayUtils.keySort(JSON.parse(body).filter(n => n), "name");
 						BDFDB.DataUtils.save(BDFDB.ArrayUtils.numSort(grabbedPlugins.map(n => n.id)).join(" "), this, "cached");
 						
@@ -878,6 +895,8 @@ module.exports = (_ => {
 						for (let i = 0; i <= 20; i++) checkPlugin();
 					}
 					catch (err) {BDFDB.NotificationUtils.toast("Failed to load Plugin Store", {type: "danger"});}
+					if (response && response.statusCode == 403) BDFDB.NotificationUtils.toast("Failed to fetch Plugin Store from the Website Api due to DDoS Protection", {type: "danger"});
+					else if (response && response.statusCode == 404) BDFDB.NotificationUtils.toast("Failed to fetch Plugin Store from the Website Api due to Connection Issue", {type: "danger"});
 				});
 			}
 
@@ -893,6 +912,10 @@ module.exports = (_ => {
 					else if (Array.isArray(obj.props.children)) for (let c of obj.props.children) string += typeof c == "string" ? c : this.getString(c);
 				}
 				return string;
+			}
+
+			compareVersions (v1, v2) {
+				return !(v1 == v2 || !BDFDB.NumberUtils.compareVersions(v1, v2));
 			}
 			
 			getInstalledPlugin (plugin) {
