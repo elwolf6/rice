@@ -1,6 +1,6 @@
 /**
  * @name MessageLoggerV2
- * @version 1.8.17
+ * @version 1.8.21
  * @invite NYvWdN5
  * @donate https://paypal.me/lighty13
  * @website https://1lighty.github.io/BetterDiscordStuff/?plugin=MessageLoggerV2
@@ -42,7 +42,7 @@ module.exports = class MessageLoggerV2 {
     return 'MessageLoggerV2';
   }
   getVersion() {
-    return '1.8.17';
+    return '1.8.21';
   }
   getAuthor() {
     return 'Lighty';
@@ -75,13 +75,11 @@ module.exports = class MessageLoggerV2 {
       let iZeresPluginLibrary = BdApi.Plugins.get('ZeresPluginLibrary');
       if (iXenoLib && iXenoLib.instance) iXenoLib = iXenoLib.instance;
       if (iZeresPluginLibrary && iZeresPluginLibrary.instance) iZeresPluginLibrary = iZeresPluginLibrary.instance;
-      if (isOutOfDate(iXenoLib, '1.4.10')) XenoLibOutdated = true;
+      if (isOutOfDate(iXenoLib, '1.4.11')) XenoLibOutdated = true;
       if (isOutOfDate(iZeresPluginLibrary, '2.0.3')) ZeresPluginLibraryOutdated = true;
     }
-
     if (!global.XenoLib || !global.ZeresPluginLibrary || XenoLibOutdated || ZeresPluginLibraryOutdated) {
       this._XL_PLUGIN = true;
-      if ("undefined" != typeof global.isTab) return;
       const a = !!window.powercord && "function" == typeof BdApi.__getPluginConfigPath,
         b = BdApi.findModuleByProps("openModal", "hasModalOpen");
       if (b && b.hasModalOpen(`${this.getName()}_DEP_MODAL`)) return;
@@ -109,7 +107,6 @@ module.exports = class MessageLoggerV2 {
           href: "https://astranika.com/bd/xenolib",
           target: "_blank"
         }, "Click here to download XenoLib")) : null));
-      if (global.XenoLib) return;
       if (!b || !i || !h) return console.error(`Missing components:${(b ? "" : " ModalStack") + (i ? "" : " ConfirmationModalComponent") + (h ? "" : "TextElement")}`), j();
       class k extends BdApi.React.PureComponent {
         constructor(a) {
@@ -120,7 +117,7 @@ module.exports = class MessageLoggerV2 {
           }), "function" == typeof this.props.onError && this.props.onError(a)), this.render = () => this.state.hasError ? null : this.props.children
         }
       }
-      let l = !!global.DiscordJS,
+      let l = false,
         m = !1;
       const n = b.openModal(c => {
         if (m) return null;
@@ -188,7 +185,7 @@ module.exports = class MessageLoggerV2 {
       {
         title: 'Fixed',
         type: 'fixed',
-        items: ['Fixed context menus, again', 'Fixed images in logger menu causing a crash']
+        items: ['Fixed incompatibility with another plugin by Tharki.']
       }
     ];
   }
@@ -208,7 +205,9 @@ module.exports = class MessageLoggerV2 {
       ZeresPluginLibrary.WebpackModules.getByProps('openModal', 'hasModalOpen').closeModal(`${this.getName()}_DEP_MODAL`);
     } catch (e) { }
     // force update
-    ZeresPluginLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), 'https://raw.githubusercontent.com/1Lighty/BetterDiscordPlugins/master/Plugins/MessageLoggerV2/MessageLoggerV2.plugin.js');
+    try {
+      ZeresPluginLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), 'https://raw.githubusercontent.com/1Lighty/BetterDiscordPlugins/master/Plugins/MessageLoggerV2/MessageLoggerV2.plugin.js');
+    } catch (err) {}
     if (window.PluginUpdates && window.PluginUpdates.plugins) delete PluginUpdates.plugins['https://gitlab.com/_Lighty_/bdstuff/raw/master/public/plugins/MessageLoggerV2.plugin.js'];
     if (BdApi.Plugins && BdApi.Plugins.get('NoDeleteMessages') && BdApi.Plugins.isEnabled('NoDeleteMessages')) XenoLib.Notifications.warning(`[**${this.getName()}**] Using **NoDeleteMessages** with **${this.getName()}** is completely unsupported and will cause issues. Please either disable **NoDeleteMessages** or delete it to avoid issues.`, { timeout: 0 });
     if (BdApi.Plugins && BdApi.Plugins.get('SuppressUserMentions') && BdApi.Plugins.isEnabled('SuppressUserMentions')) XenoLib.Notifications.warning(`[**${this.getName()}**] Using **SuppressUserMentions** with **${this.getName()}** is completely unsupported and will cause issues. Please either disable **SuppressUserMentions** or delete it to avoid issues.`, { timeout: 0 });
@@ -519,14 +518,7 @@ module.exports = class MessageLoggerV2 {
       getUserAsync: ZeresPluginLibrary.WebpackModules.getByProps('getUser', 'acceptAgreements').getUser,
       isBlocked: ZeresPluginLibrary.WebpackModules.getByProps('isBlocked').isBlocked,
       createMomentObject: ZeresPluginLibrary.WebpackModules.getByProps('createFromInputFallback'),
-      isMentioned: (e, id) =>
-      (mentionedModule.isMentioned.length === 1 ? mentionedModule.isMentioned({ userId: id, channelId: e.channel_id, mentionEveryone: e.mentionEveryone || e.mention_everyone, mentionUsers: e.mentions.map(e => e.id || e), mentionRoles: e.mentionRoles || e.mention_roles }) : mentionedModule.isMentioned(
-        id,
-        e.channel_id,
-        e.mentionEveryone || e.mention_everyone,
-        e.mentions.map(e => e.id || e),
-        e.mentionRoles || e.mention_roles
-      )),
+      isMentioned: (e, id) => mentionedModule.isMentioned({ userId: id, channelId: e.channel_id, mentionEveryone: e.mentionEveryone || e.mention_everyone, mentionUsers: e.mentions.map(e => e.id || e), mentionRoles: e.mentionRoles || e.mention_roles }),
       DiscordUtils: ZeresPluginLibrary.WebpackModules.getByProps('bindAll', 'debounce')
     };
 
@@ -645,9 +637,11 @@ module.exports = class MessageLoggerV2 {
 
     this.autoBackupSaveInterupts = 0;
 
+    this.dispatcher = ZeresPluginLibrary.WebpackModules.find(e => e.dispatch && !e.getCurrentUser);
+
     this.unpatches.push(
       this.Patcher.instead(
-        ZeresPluginLibrary.WebpackModules.find(e => e.dispatch && !e.getCurrentUser),
+        this.dispatcher,
         'dispatch',
         (_, args, original) => this.onDispatchEvent(args, original)
       )
@@ -1039,7 +1033,7 @@ module.exports = class MessageLoggerV2 {
         this.stop();
         this.start();
       }, 3000);
-      ZeresPluginLibrary.WebpackModules.find(m => m.dispatch && !m.getCurrentUser).dispatch({
+      this.dispatcher.dispatch({
         type: 'MESSAGE_LOGGER_V2_SELF_TEST'
       });
     }, 10000);
@@ -1104,7 +1098,7 @@ module.exports = class MessageLoggerV2 {
             updateFail();
             return;
           }
-          if (!ZeresPluginLibrary.PluginUpdater.defaultComparator(this.getVersion(), ZeresPluginLibrary.PluginUpdater.defaultVersioner(body))) return;
+          if (!XenoLib.versionComparator(this.getVersion(), XenoLib.extractVersion(body))) return;
           const fs = require('fs');
           /*
            * why are we letting Zere, the braindead American let control BD when he can't even
@@ -1332,7 +1326,7 @@ module.exports = class MessageLoggerV2 {
             name: 'Display edited messages in chat',
             id: 'showEditedMessages',
             type: 'switch',
-            callback: () => ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT' })
+            callback: () => this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT' })
           },
           {
             name: 'Max number of shown edits',
@@ -1341,20 +1335,20 @@ module.exports = class MessageLoggerV2 {
             onChange: val => {
               if (isNaN(val)) return this.showToast('Value must be a number!', { type: 'error' });
               this.settings.maxShownEdits = parseInt(val);
-              ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT' });
+              this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT' });
             }
           },
           {
             name: 'Show oldest edit instead of newest if over the shown edits limit',
             id: 'hideNewerEditsFirst',
             type: 'switch',
-            callback: () => ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT' })
+            callback: () => this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT' })
           },
           {
             name: 'Use red background instead of red text for deleted messages',
             id: 'useAlternativeDeletedStyle',
             type: 'switch',
-            callback: () => ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE' })
+            callback: () => this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE' })
           },
           {
             name: 'Display purged messages in chat',
@@ -1656,7 +1650,9 @@ module.exports = class MessageLoggerV2 {
                 this.automaticallyUpdate();
               } else {
                 clearInterval(this._autoUpdateInterval);
-                ZeresPluginLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), 'https://raw.githubusercontent.com/1Lighty/BetterDiscordPlugins/master/Plugins/MessageLoggerV2/MessageLoggerV2.plugin.js');
+                try {
+                  ZeresPluginLibrary.PluginUpdater.checkForUpdate(this.getName(), this.getVersion(), 'https://raw.githubusercontent.com/1Lighty/BetterDiscordPlugins/master/Plugins/MessageLoggerV2/MessageLoggerV2.plugin.js');
+                } catch (err) {}
               }
             }
           },
@@ -2574,6 +2570,7 @@ module.exports = class MessageLoggerV2 {
   /* ==================================================-|| END MESSAGE MANAGMENT ||-================================================== */
   onDispatchEvent(args, callDefault) {
     const dispatch = args[0];
+    let ret = Promise.resolve();
 
     if (!dispatch) return callDefault(...args);
 
@@ -2582,14 +2579,14 @@ module.exports = class MessageLoggerV2 {
         clearTimeout(this.selfTestTimeout);
         //console.log('Self test OK');
         this.selfTestFailures = 0;
-        return;
+        return ret;
       }
       // if (dispatch.type == 'EXPERIMENT_TRIGGER') return callDefault(...args);
       // console.log('INFO: onDispatchEvent -> dispatch', dispatch);
       if (dispatch.type === 'CHANNEL_SELECT') {
-        callDefault(...args);
+        ret = callDefault(...args);
         this.selectedChannel = this.getSelectedTextChannel();
-        return;
+        return ret;
       }
 
       if (dispatch.ML2 && dispatch.type === 'MESSAGE_DELETE') return callDefault(...args);
@@ -2679,7 +2676,7 @@ module.exports = class MessageLoggerV2 {
           }
           this.saveDeletedMessage(deleted, this.deletedMessageRecord);
           this.saveData();
-          if (XenoLib.DiscordAPI.channelId.id === dispatch.channelId) ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE', id: dispatch.id });
+          if (XenoLib.DiscordAPI.channelId.id === dispatch.channelId) this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE', id: dispatch.id });
         } else if (dispatch.type === 'MESSAGE_UPDATE') {
           if (!dispatch.message.edited_timestamp) {
             if (dispatch.message.embeds) {
@@ -2800,8 +2797,8 @@ module.exports = class MessageLoggerV2 {
         if (!deleted) return callDefault(...args); // nothing we can do past this point..
 
         if (this.deletedMessageRecord[channel.id] && this.deletedMessageRecord[channel.id].findIndex(m => m === deleted.id) != -1) {
-          if (!this.settings.showDeletedMessages) callDefault(...args);
-          return;
+          if (!this.settings.showDeletedMessages) ret = callDefault(...args);
+          return ret;
         }
 
         if (deleted.type !== 0 && deleted.type !== 19 && (deleted.type !== 20 || (deleted.flags & 64) === 64)) return callDefault(...args);
@@ -2845,8 +2842,8 @@ module.exports = class MessageLoggerV2 {
 
         this.saveDeletedMessage(deleted, this.deletedMessageRecord);
         // if (this.settings.cacheAllImages) this.cacheImages(deleted);
-        if (!this.settings.showDeletedMessages) callDefault(...args);
-        else if (XenoLib.DiscordAPI.channelId === dispatch.channelId) ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE', id: dispatch.id });
+        if (!this.settings.showDeletedMessages) ret = callDefault(...args);
+        else if (XenoLib.DiscordAPI.channelId === dispatch.channelId) this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE', id: dispatch.id });
         this.saveData();
       } else if (dispatch.type == 'MESSAGE_DELETE_BULK') {
         if (this.settings.showDeletedCount) {
@@ -2863,7 +2860,7 @@ module.exports = class MessageLoggerV2 {
             continue;
           }
           this.saveDeletedMessage(purged, this.purgedMessageRecord);
-          if (XenoLib.DiscordAPI.channelId === dispatch.channelId) ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE', id: purged.id });
+          if (XenoLib.DiscordAPI.channelId === dispatch.channelId) this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE', id: purged.id });
         }
 
         if (failedMessage && this.aggresiveMessageCaching)
@@ -2891,7 +2888,7 @@ module.exports = class MessageLoggerV2 {
             }
           }
         }
-        if (!this.settings.showPurgedMessages) callDefault(...args);
+        if (!this.settings.showPurgedMessages) ret = callDefault(...args);
         this.saveData();
       } else if (dispatch.type == 'MESSAGE_UPDATE') {
         if (!dispatch.message.edited_timestamp) {
@@ -3032,11 +3029,12 @@ module.exports = class MessageLoggerV2 {
             }
           }
         }
-        callDefault(...args);
-      } else callDefault(...args);
+        return callDefault(...args);
+      } else return callDefault(...args);
     } catch (err) {
       ZeresPluginLibrary.Logger.stacktrace(this.getName(), 'Error in onDispatchEvent', err);
     }
+    return ret;
   }
   /* ==================================================-|| START MENU ||-================================================== */
   processUserRequestQueue() {
@@ -3086,15 +3084,15 @@ module.exports = class MessageLoggerV2 {
       this.Patcher.after(MessageContent, 'type', (_, [props], ret) => {
         const forceUpdate = ZeresPluginLibrary.DiscordModules.React.useState()[1];
         ZeresPluginLibrary.DiscordModules.React.useEffect(
-          function () {
+          () => {
             function callback(e) {
               if (!e || !e.id || e.id === props.message.id) {
                 forceUpdate({});
               }
             }
-            ZeresPluginLibrary.DiscordModules.Dispatcher.subscribe('MLV2_FORCE_UPDATE_MESSAGE_CONTENT', callback);
-            return function () {
-              ZeresPluginLibrary.DiscordModules.Dispatcher.unsubscribe('MLV2_FORCE_UPDATE_MESSAGE_CONTENT', callback);
+            this.dispatcher.subscribe('MLV2_FORCE_UPDATE_MESSAGE_CONTENT', callback);
+            return () => {
+              this.dispatcher.unsubscribe('MLV2_FORCE_UPDATE_MESSAGE_CONTENT', callback);
             };
           },
           [props.message.id, forceUpdate]
@@ -3164,13 +3162,13 @@ module.exports = class MessageLoggerV2 {
       this.Patcher.after(MemoMessage, 'type', (_, [props], ret) => {
         const forceUpdate = ZeresPluginLibrary.DiscordModules.React.useState()[1];
         ZeresPluginLibrary.DiscordModules.React.useEffect(
-          function () {
+          () => {
             function callback(e) {
               if (!e || !e.id || e.id === props.message.id) forceUpdate({});
             }
-            ZeresPluginLibrary.DiscordModules.Dispatcher.subscribe('MLV2_FORCE_UPDATE_MESSAGE', callback);
-            return function () {
-              ZeresPluginLibrary.DiscordModules.Dispatcher.unsubscribe('MLV2_FORCE_UPDATE_MESSAGE', callback);
+            this.dispatcher.subscribe('MLV2_FORCE_UPDATE_MESSAGE', callback);
+            return () => {
+              this.dispatcher.unsubscribe('MLV2_FORCE_UPDATE_MESSAGE', callback);
             };
           },
           [props.message.id, forceUpdate]
@@ -3638,7 +3636,7 @@ module.exports = class MessageLoggerV2 {
                 this.saveData();
                 if (record.message.channel_id !== this.selectedChannel.id) return;
                 if (record.delete_data) {
-                  ZeresPluginLibrary.DiscordModules.Dispatcher.dirtyDispatch({
+                  this.dispatcher.dispatch({
                     type: 'MESSAGE_DELETE',
                     id: messageId,
                     channelId: record.message.channel_id,
@@ -3646,7 +3644,7 @@ module.exports = class MessageLoggerV2 {
                     // on a side note, probably does nothing if we don't ignore
                   });
                 } else {
-                  ZeresPluginLibrary.DiscordModules.Dispatcher.dirtyDispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
+                  this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
                 }
               }
             },
@@ -4473,8 +4471,8 @@ module.exports = class MessageLoggerV2 {
               this.deleteMessageFromRecords(element.messageId);
               this.refilterMessages(); // I don't like calling that, maybe figure out a way to animate it collapsing on itself smoothly
               this.saveData();
-              if (record.delete_data) ZeresPluginLibrary.DiscordModules.Dispatcher.dirtyDispatch({ type: 'MESSAGE_DELETE', id: messageId, channelId: channelId, ML2: true });
-              else ZeresPluginLibrary.DiscordModules.Dispatcher.dirtyDispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
+              if (record.delete_data) this.dispatcher.dispatch({ type: 'MESSAGE_DELETE', id: messageId, channelId: channelId, ML2: true });
+              else this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
             },
             this.obfuscatedClass('remove')
           );
@@ -4539,7 +4537,7 @@ module.exports = class MessageLoggerV2 {
               addElement(
                 'Hide Deleted Message',
                 () => {
-                  ZeresPluginLibrary.DiscordModules.Dispatcher.dirtyDispatch({
+                  this.dispatcher.dispatch({
                     type: 'MESSAGE_DELETE',
                     id: messageId,
                     channelId: channelId,
@@ -4570,7 +4568,7 @@ module.exports = class MessageLoggerV2 {
                   () => {
                     record.edits_hidden = false;
                     this.saveData();
-                    ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
+                    this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
                   },
                   this.obfuscatedClass('unhide-edits')
                 );
@@ -4587,7 +4585,7 @@ module.exports = class MessageLoggerV2 {
                         () => {
                           record.edits_hidden = true;
                           this.saveData();
-                          ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
+                          this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
                         },
                         this.obfuscatedClass('hide-edits')
                       );
@@ -4598,7 +4596,7 @@ module.exports = class MessageLoggerV2 {
                         `${this.editModifiers[messageId].noSuffix ? 'Show' : 'Hide'} (edited) Tag`,
                         () => {
                           this.editModifiers[messageId].noSuffix = true;
-                          ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
+                          this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
                         },
                         this.obfuscatedClass('change-edit-tag')
                       );
@@ -4606,7 +4604,7 @@ module.exports = class MessageLoggerV2 {
                         `Undo Show As Message`,
                         () => {
                           delete this.editModifiers[messageId];
-                          ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
+                          this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
                         },
                         this.obfuscatedClass('undo-show-as-message')
                       );
@@ -4615,7 +4613,7 @@ module.exports = class MessageLoggerV2 {
                         'Show Edit As Message',
                         () => {
                           this.editModifiers[messageId] = { editNum };
-                          ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
+                          this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
                         },
                         this.obfuscatedClass('show-as-message')
                       );
@@ -4623,7 +4621,7 @@ module.exports = class MessageLoggerV2 {
                         'Delete Edit',
                         () => {
                           this.deleteEditedMessageFromRecord(messageId, parseInt(editNum));
-                          ZeresPluginLibrary.DiscordModules.Dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
+                          this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
                         },
                         this.obfuscatedClass('delete-edit'),
                         { color: 'colorDanger' }
@@ -4640,7 +4638,7 @@ module.exports = class MessageLoggerV2 {
                   this.deleteMessageFromRecords(messageId);
                   this.saveData();
                   if (record.delete_data) {
-                    ZeresPluginLibrary.DiscordModules.Dispatcher.dirtyDispatch({
+                    this.dispatcher.dispatch({
                       type: 'MESSAGE_DELETE',
                       id: messageId,
                       channelId: channelId,
@@ -4648,7 +4646,7 @@ module.exports = class MessageLoggerV2 {
                       // on a side note, probably does nothing if we don't ignore
                     });
                   } else {
-                    ZeresPluginLibrary.DiscordModules.Dispatcher.dirtyDispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
+                    this.dispatcher.dispatch({ type: 'MLV2_FORCE_UPDATE_MESSAGE_CONTENT', id: messageId });
                   }
                 },
                 this.obfuscatedClass('remove-from-log'),

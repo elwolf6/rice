@@ -20,7 +20,7 @@
     "PluginRepo": true,
     "QuickView": true,
     "ReadAllNotificationsButton": true,
-    "ShowHiddenChannels": true,
+    "ShowHiddenChannels": false,
     "StaffTag": true,
     "ThemeRepo": true,
     "Translator": true,

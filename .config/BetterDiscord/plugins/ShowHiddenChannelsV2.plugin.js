@@ -1,24 +1,19 @@
 /**
- * @name ShowHiddenChannels
- * @author DevilBro
- * @authorId 278543574059057154
- * @version 3.2.4
- * @description Displays all hidden Channels, which can't be accessed due to Role Restrictions, this won't allow you to read them (impossible)
- * @invite Jx3TjNS
- * @donate https://www.paypal.me/MircoWittrien
- * @patreon https://www.patreon.com/MircoWittrien
- * @website https://mwittrien.github.io/
- * @source https://github.com/mwittrien/BetterDiscordAddons/tree/master/Plugins/ShowHiddenChannels/
- * @updateUrl https://mwittrien.github.io/BetterDiscordAddons/Plugins/ShowHiddenChannels/ShowHiddenChannels.plugin.js
+ * @name ShowHiddenChannelsV2
+ * @author DevilBro, Salvage
+ * @version 4.0.0
+ * @description Actually displays all hidden Channels, which can't be accessed due to Role Restrictions, this won't allow you to read them (impossible)
+ * @source https://github.com/Saalvage/BetterDiscordAddons/tree/master/Plugins/ShowHiddenChannelsV2/
+ * @updateUrl https://raw.githubusercontent.com/Saalvage/BetterDiscordAddons/master/Plugins/ShowHiddenChannelsV2/ShowHiddenChannelsV2.plugin.js
  */
 
 module.exports = (_ => {
 	const config = {
 		"info": {
-			"name": "ShowHiddenChannels",
-			"author": "DevilBro",
-			"version": "3.2.4",
-			"description": "Displays all hidden Channels, which can't be accessed due to Role Restrictions, this won't allow you to read them (impossible)"
+			"name": "ShowHiddenChannelsV2",
+			"author": "DevilBro, Salvage",
+			"version": "4.0.0",
+			"description": "Actually displays all hidden Channels, which can't be accessed due to Role Restrictions, this won't allow you to read them (impossible)"
 		}
 	};
 
@@ -196,7 +191,7 @@ module.exports = (_ => {
 			
 				this.patchedModules = {
 					before: {
-						Channels: "render",
+						ChannelList: "render",
 						ChannelCategoryItem: "type",
 						ChannelItem: "default",
 						VoiceUsers: "render"
@@ -208,7 +203,7 @@ module.exports = (_ => {
 				};
 				
 				this.css = `
-					${BDFDB.dotCNS._showhiddenchannelsaccessmodal + BDFDB.dotCN.messagespopoutemptyplaceholder} {
+					.accessModal-w5HjsV${BDFDB.dotCN.messagespopoutemptyplaceholder} {
 						position: absolute;
 						bottom: 0;
 						width: 100%;
@@ -370,7 +365,7 @@ module.exports = (_ => {
 				if (e.instance.props.channel && this.isChannelHidden(e.instance.props.channel.id)) return null;
 			}
 			
-			processChannels (e) {
+			processChannelList (e) {
 				if (!e.instance.props.guild || e.instance.props.guild.id.length < 16) return;
 				let show = !blackList.includes(e.instance.props.guild.id), sortAtBottom = this.settings.sortOrder.hidden == sortOrders.BOTTOM.value;
 				e.instance.props.guildChannels = new e.instance.props.guildChannels.constructor(e.instance.props.guildChannels.id, e.instance.props.guildChannels.hoistedSection.hoistedRows);
@@ -395,8 +390,8 @@ module.exports = (_ => {
 							if (hiddenChannelCache[e.instance.props.guild.id].indexOf(n.record.id) == -1) hiddenChannelCache[e.instance.props.guild.id].push(n.record.id);
 						}
 						category.shownChannelIds = channelArray.filter(n => n.renderLevel == renderLevels.SHOW).sort((x, y) => {
-							let xPos = x.record.position + (x.record.isVocal() ? 1e4 : 0) + (sortAtBottom && x._hidden ? 1e5 : 0);
-							let yPos = y.record.position + (y.record.isVocal() ? 1e4 : 0) + (sortAtBottom && y._hidden ? 1e5 : 0);
+							let xPos = x.record.position + (x.record.isGuildVocal() ? 1e4 : 0) + (sortAtBottom && x._hidden ? 1e5 : 0);
+							let yPos = y.record.position + (y.record.isGuildVocal() ? 1e4 : 0) + (sortAtBottom && y._hidden ? 1e5 : 0);
 							return xPos < yPos ? -1 : xPos > yPos ? 1 : 0;
 						}).map(n => n.id);
 					}
@@ -419,7 +414,7 @@ module.exports = (_ => {
 			
 			processChannelItem (e) {
 				if (e.instance.props.channel && this.isChannelHidden(e.instance.props.channel.id)) {
-					if (!e.returnvalue) e.instance.props.className = BDFDB.DOMUtils.formatClassName(e.instance.props.className, BDFDB.disCN._showhiddenchannelshiddenchannel);
+					if (!e.returnvalue) e.instance.props.className = BDFDB.DOMUtils.formatClassName(e.instance.props.className, "hidden-9f2Dsa");
 					else {
 						let [children, index] = BDFDB.ReactUtils.findParent(e.returnvalue, {name: "ChannelItemIcon"});
 						let channelChildren = BDFDB.ReactUtils.findChild(e.returnvalue, {props: [["className", BDFDB.disCN.channelchildren]]});
@@ -572,7 +567,7 @@ module.exports = (_ => {
 					size: "MEDIUM",
 					header: BDFDB.LanguageUtils.LanguageStrings.CHANNEL + " " + BDFDB.LanguageUtils.LanguageStrings.ACCESSIBILITY,
 					subHeader: "#" + channel.name,
-					className: BDFDB.disCN._showhiddenchannelsaccessmodal,
+					className: "accessModal-w5HjsV",
 					contentClassName: BDFDB.DOMUtils.formatClassName(!isThread && BDFDB.disCN.listscroller),
 					onOpen: modalInstance => {if (modalInstance) accessModal = modalInstance;},
 					children: isThread ? infoStrings : [
