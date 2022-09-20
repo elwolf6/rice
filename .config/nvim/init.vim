@@ -72,7 +72,8 @@ let g:lightline = {
 	set splitbelow splitright
 " Nerd Commenter
 	vmap <C-_> <plug>NERDCommenterToggle
-	nmap <C-_> <plug>NERDCommenterToggleefault mappings
+	nmap <C-_> <plug>NERDCommenterToggle
+
 
 " Nerd tree
 	map <leader>n :NERDTreeToggle<CR>
