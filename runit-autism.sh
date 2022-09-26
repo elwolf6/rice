@@ -5,6 +5,8 @@ NetworkManager
 mkdir -p /run/runit
 mkdir -p /run/runit/service
 
+ln -s /etc/runit/sv/netmount /run/runit/service
+ln -s /etc/runit/sv/ntpd /run/runit/service
 ln -s /etc/runit/sv/NetworkManager /run/runit/service
 sv up NetworkManager
 killall NetworkManager
