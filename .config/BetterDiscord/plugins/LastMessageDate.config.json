@@ -1,10 +1,7 @@
 {
 	"all": {
 		"dates": {
-			"creationDate": {}
-		},
-		"general": {
-			"displayText": true
+			"lastMessageDate": {}
 		},
 		"places": {
 			"userPopout": true,

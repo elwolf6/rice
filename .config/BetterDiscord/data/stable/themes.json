@@ -1,5 +1,6 @@
 {
     "       Nordic": true,
     "Comfy": false,
-    "Nordic": true
+    "Nordic": true,
+    "dracula": false
 }

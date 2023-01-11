@@ -1,7 +1,7 @@
 {
     "settings": {
         "obfuscateCSSClasses": true,
-        "autoBackup": false,
+        "autoBackup": true,
         "dontSaveData": false,
         "displayUpdateNotes": true,
         "ignoreMutedGuilds": false,
@@ -35,7 +35,7 @@
             "disableToastsForLocal": false
         },
         "useNotificationsInstead": true,
-        "blockSpamEdit": false,
+        "blockSpamEdit": true,
         "disableKeybind": false,
         "cacheAllImages": true,
         "dontDeleteCachedImages": false,
@@ -63,7 +63,7 @@
             "showNotifications": false,
             "showContextMenu": false
         },
-        "imageCacheDir": "/home/elwolf/.config/BetterDiscord/plugins/MLV2_IMAGE_CACHE",
+        "imageCacheDir": "/home/marroq/.config/BetterDiscord/plugins/MLV2_IMAGE_CACHE",
         "flags": 2,
         "autoUpdate": true,
         "versionInfo": "1.8.21"

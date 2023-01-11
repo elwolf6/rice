@@ -2,7 +2,7 @@
  * @name Translator
  * @author DevilBro
  * @authorId 278543574059057154
- * @version 2.4.1
+ * @version 2.4.9
  * @description Allows you to translate Messages and your outgoing Messages within Discord
  * @invite Jx3TjNS
  * @donate https://www.paypal.me/MircoWittrien
@@ -14,11 +14,7 @@
 
 module.exports = (_ => {
 	const changeLog = {
-		"added": {
-			"Translated Labels": "Translated the Config Popout to all Discord Languages",
-			"Server Specific Translation": "Same as the Channel Specific Translations just for Servers",
-			"Remember Enable State": "Saves the enable State for Translation States"
-		}
+		
 	};
 	
 	return !window.BDFDB_Global || (!window.BDFDB_Global.loaded && !window.BDFDB_Global.started) ? class {
@@ -139,7 +135,7 @@ module.exports = (_ => {
 								titleChildren: direction == languageTypes.OUTPUT && [{
 									text: _ => isChannelSpecific ? _this.labels.language_selection_channel : isGuildSpecific ? _this.labels.language_selection_server : _this.labels.language_selection_global,
 									name: isChannelSpecific || isGuildSpecific ? BDFDB.LibraryComponents.SvgIcon.Names.LOCK_CLOSED : BDFDB.LibraryComponents.SvgIcon.Names.LOCK_OPEN,
-									color: isChannelSpecific ? "var(--bdfdb-red)" : isGuildSpecific ? "var(--bdfdb-yellow)" : null,
+									color: isChannelSpecific ? BDFDB.DiscordConstants.ColorVariables["status-danger"] : isGuildSpecific ? BDFDB.DiscordConstants.ColorVariables["status-warning"] : null,
 									onClick: _ => {
 										if (channelLanguages[this.props.channelId] && channelLanguages[this.props.channelId][place]) {
 											isChannelSpecific = false;
@@ -214,7 +210,7 @@ module.exports = (_ => {
 													nativeClass: true,
 													width: 20,
 													height: 20,
-													color: "var(--bdfdb-red)",
+													color: BDFDB.DiscordConstants.ColorVariables["status-danger"],
 													name: BDFDB.LibraryComponents.SvgIcon.Names.WARNING
 												})
 											}),
@@ -260,13 +256,13 @@ module.exports = (_ => {
 						plugin: _this,
 						keys: ["general", key],
 						label: _this.labels[`general_${key}`],
-						tag: BDFDB.LibraryComponents.FormComponents.FormTitle.Tags.H5,
+						tag: BDFDB.LibraryComponents.FormComponents.FormTags.H5,
 						value: _this.settings.general[key]
 					})),
 					BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.SettingsItem, {
 						type: "Switch",
 						label: _this.labels.translate_your_message,
-						tag: BDFDB.LibraryComponents.FormComponents.FormTitle.Tags.H5,
+						tag: BDFDB.LibraryComponents.FormComponents.FormTags.H5,
 						value: _this.isTranslationEnabled(this.props.channelId),
 						onChange: value => {
 							_this.toggleTranslation(this.props.channelId);
@@ -344,7 +340,7 @@ module.exports = (_ => {
 					"zh-CN": "zh",
 					"zh-TW": "cht"
 				},
-				key: "xxxxxxxxx xxxxxx xxxxxxxxxx"
+				key: "appId (number) key (string)"
 			}
 		};
 		
@@ -390,24 +386,26 @@ module.exports = (_ => {
 				};
 				for (let m in messageTypes) this.defaults.choices[messageTypes[m]] = {value: Object.keys(languageTypes).reduce((newObj, l) => (newObj[languageTypes[l]] = defaultLanguages[l], newObj), {})};
 			
-				this.patchedModules = {
-					before: {
-						ChannelTextAreaForm: "render",
-						ChannelEditorContainer: "render",
-						Embed: "render"
-					},
-					after: {
-						ChannelTextAreaButtons: "type",
-						Messages: "type",
-						MessageReply: "default",
-						MessageContent: "type",
-						Embed: "render"
-					}
+				this.modulePatches = {
+					before: [
+						"ChannelTextAreaContainer",
+						"ChannelTextAreaEditor",
+						"Embed",
+						"MessageReply",
+						"Messages"
+					],
+					after: [
+						"ChannelTextAreaButtons",
+						"Embed",
+						"MessageActionsContextMenu",
+						"MessageContent",
+						"MessageToolbar"
+					]
 				};
 
 				this.css = `
 					${BDFDB.dotCN._translatortranslatebutton + BDFDB.dotCNS._translatortranslating + BDFDB.dotCN.textareaicon} {
-						color: var(--bdfdb-red) !important;
+						color: var(--status-danger) !important;
 					}
 					${BDFDB.dotCN._translatorconfigbutton} {
 						margin: 2px 3px 0 6px;
@@ -416,6 +414,13 @@ module.exports = (_ => {
 			}
 			
 			onStart () {
+				BDFDB.PatchUtils.patch(this, BDFDB.LibraryModules.MessageUtils, "startEditMessage", {before: e => {
+					if (e.methodArguments[1] && oldMessages[e.methodArguments[1]] && oldMessages[e.methodArguments[1]].content) e.methodArguments[2] = oldMessages[e.methodArguments[1]].content;
+				}});
+				BDFDB.PatchUtils.patch(this, BDFDB.LibraryModules.MessageUtils, "editMessage", {before: e => {
+					delete translatedMessages[e.methodArguments[1]];
+					delete oldMessages[e.methodArguments[1]];
+				}});
 				this.forceUpdateAll();
 			}
 			
@@ -454,7 +459,7 @@ module.exports = (_ => {
 										children: [
 											BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.FormComponents.FormTitle, {
 												className: BDFDB.disCN.marginreset,
-												tag: BDFDB.LibraryComponents.FormComponents.FormTitle.Tags.H5,
+												tag: BDFDB.LibraryComponents.FormComponents.FormTags.H5,
 												children: translationEngines[key].name
 											}),
 											translationEngines[key].premium && BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.SettingsItem, {
@@ -462,7 +467,7 @@ module.exports = (_ => {
 												margin: 0,
 												grow: 0,
 												label: "Paid Version",
-												tag: BDFDB.LibraryComponents.FormComponents.FormTitle.Tags.H5,
+												tag: BDFDB.LibraryComponents.FormComponents.FormTags.H5,
 												value: authKeys[key] && authKeys[key].paid,
 												onChange: value => {
 													if (!authKeys[key]) authKeys[key] = {};
@@ -490,7 +495,7 @@ module.exports = (_ => {
 						}));
 						
 						for (let key in this.defaults.exceptions) settingsItems.push(BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.FormComponents.FormItem, {
-							title: this.labels.exception_text.replace("{{var0}}", "").split(" ").map(n => n).join(" "),
+							title: this.labels.exception_text.replace("{{var0}}", "").split(" ").filter(n => n).join(" "),
 							className: BDFDB.disCN.marginbottom8,
 							children: BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.ListInput, {
 								placeholder: "New Exception",
@@ -533,7 +538,7 @@ module.exports = (_ => {
 
 			onMessageContextMenu (e) {
 				if (e.instance.props.message && e.instance.props.channel) {
-					let translated = translatedMessages[e.instance.props.message.id];
+					let translated = !!translatedMessages[e.instance.props.message.id];
 					let hint = BDFDB.BDUtils.isPluginEnabled("MessageUtilities") ? BDFDB.BDUtils.getPlugin("MessageUtilities").getActiveShortcutString("__Translate_Message") : null;
 					let [children, index] = BDFDB.ContextMenuUtils.findItem(e.returnvalue, {id: ["pin", "unpin"]});
 					if (index == -1) [children, index] = BDFDB.ContextMenuUtils.findItem(e.returnvalue, {id: ["edit", "add-reaction", "quote"]});
@@ -553,11 +558,7 @@ module.exports = (_ => {
 				}
 			}
 			
-			onNativeContextMenu (e) {
-				this.injectSearchItem(e);
-			}
-			
-			onSlateContextMenu (e) {
+			onTextAreaContextMenu (e) {
 				this.injectSearchItem(e);
 			}
 			
@@ -569,6 +570,9 @@ module.exports = (_ => {
 					children.splice(index > -1 ? index + 1 : 0, 0, BDFDB.ContextMenuUtils.createItem(BDFDB.LibraryComponents.MenuItems.MenuGroup, {
 						children: BDFDB.ContextMenuUtils.createItem(BDFDB.LibraryComponents.MenuItems.MenuItem, {
 							id: BDFDB.ContextMenuUtils.createItemId(this.name, "search-translation"),
+							icon: _ => BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.MenuItems.MenuIcon, {
+								icon: translateIcon
+							}),
 							disabled: isTranslating,
 							label: this.labels.context_translator,
 							persisting: true,
@@ -576,14 +580,14 @@ module.exports = (_ => {
 								let item = BDFDB.DOMUtils.getParent(BDFDB.dotCN.menuitem, event.target);
 								if (item) {
 									let createTooltip = _ => {
-										BDFDB.TooltipUtils.create(item, [
+										BDFDB.TooltipUtils.create(item, !foundTranslation ? this.labels.toast_translating_failed : [
 											`${BDFDB.LanguageUtils.LibraryStrings.from} ${foundInput.name}:`,
 											text,
 											`${BDFDB.LanguageUtils.LibraryStrings.to} ${foundOutput.name}:`,
 											foundTranslation
 										].map(n => BDFDB.ReactUtils.createElement("div", {children: n})), {
 											type: "right",
-											color: "black",
+											color: foundTranslation ? "black" : "red",
 											className: "googletranslate-tooltip"
 										});
 									};
@@ -601,6 +605,7 @@ module.exports = (_ => {
 												foundTranslation = translation, foundInput = input, foundOutput = output;
 												createTooltip();
 											}
+											else createTooltip();
 										});
 									}
 								}
@@ -610,7 +615,7 @@ module.exports = (_ => {
 				}
 			}
 			
-			onMessageOptionContextMenu (e) {
+			processMessageActionsContextMenu (e) {
 				if (e.instance.props.message && e.instance.props.channel) {
 					let translated = !!translatedMessages[e.instance.props.message.id];
 					let [children, index] = BDFDB.ContextMenuUtils.findItem(e.returnvalue, {id: ["pin", "unpin"]});
@@ -626,7 +631,7 @@ module.exports = (_ => {
 				}
 			}
 		
-			onMessageOptionToolbar (e) {
+			processMessageToolbar (e) {
 				if (e.instance.props.expanded && e.instance.props.message && e.instance.props.channel) {
 					let translated = !!translatedMessages[e.instance.props.message.id];
 					e.returnvalue.props.children.unshift();
@@ -654,8 +659,9 @@ module.exports = (_ => {
 				}
 			}
 			
-			processChannelTextAreaForm (e) {
-				BDFDB.PatchUtils.patch(this, e.instance, "handleSendMessage", {instead: e2 => {
+			processChannelTextAreaContainer (e) {
+				if (e.instance.props.type != BDFDB.DiscordConstants.ChannelTextAreaTypes.NORMAL && e.instance.props.type != BDFDB.DiscordConstants.ChannelTextAreaTypes.NORMAL_WITH_ACTIVITY && e.instance.props.type != BDFDB.DiscordConstants.ChannelTextAreaTypes.SIDEBAR) return;
+				BDFDB.PatchUtils.patch(this, e.instance.props, "onSubmit", {instead: e2 => {
 					if (this.isTranslationEnabled(e.instance.props.channel.id) && e2.methodArguments[0].value) {
 						e2.stopOriginalMethodCall();
 						this.translateText(e2.methodArguments[0].value, messageTypes.SENT, (translation, input, output) => {
@@ -668,28 +674,27 @@ module.exports = (_ => {
 						});
 					}
 					return e2.callOriginalMethodAfterwards();
-				}}, {force: true, noCache: true});
+				}}, {noCache: true});
 			}
 
-			processChannelEditorContainer (e) {
+			processChannelTextAreaEditor (e) {
 				if (this.isTranslationEnabled(e.instance.props.channel.id) && isTranslating) e.instance.props.disabled = true;
 			}
 			
 			processChannelTextAreaButtons (e) {
-				if (this.settings.general.addTranslateButton && (e.instance.props.type == BDFDB.LibraryComponents.ChannelTextAreaTypes.NORMAL || e.instance.props.type == BDFDB.LibraryComponents.ChannelTextAreaTypes.NORMAL_WITH_ACTIVITY || e.instance.props.type == BDFDB.LibraryComponents.ChannelTextAreaTypes.SIDEBAR) && !e.instance.props.disabled) {
-					e.returnvalue.props.children.unshift(BDFDB.ReactUtils.createElement(TranslateButtonComponent, {
-						guildId: e.instance.props.channel.guild_id ? e.instance.props.channel.guild_id : "@me",
-						channelId: e.instance.props.channel.id
-					}));
-				}
+				if (!this.settings.general.addTranslateButton || e.instance.props.disabled || e.instance.props.type != BDFDB.DiscordConstants.ChannelTextAreaTypes.NORMAL && e.instance.props.type != BDFDB.DiscordConstants.ChannelTextAreaTypes.NORMAL_WITH_ACTIVITY && e.instance.props.type != BDFDB.DiscordConstants.ChannelTextAreaTypes.SIDEBAR) return;
+				e.returnvalue.props.children.unshift(BDFDB.ReactUtils.createElement(TranslateButtonComponent, {
+					guildId: e.instance.props.channel.guild_id ? e.instance.props.channel.guild_id : "@me",
+					channelId: e.instance.props.channel.id
+				}));
 			}
 
 			processMessages (e) {
-				e.returnvalue.props.children.props.channelStream = [].concat(e.returnvalue.props.children.props.channelStream);
-				for (let i in e.returnvalue.props.children.props.channelStream) {
-					let message = e.returnvalue.props.children.props.channelStream[i].content;
+				e.instance.props.channelStream = [].concat(e.instance.props.channelStream);
+				for (let i in e.instance.props.channelStream) {
+					let message = e.instance.props.channelStream[i].content;
 					if (message) {
-						if (BDFDB.ArrayUtils.is(message.attachments)) this.checkMessage(e.returnvalue.props.children.props.channelStream[i], message);
+						if (BDFDB.ArrayUtils.is(message.attachments)) this.checkMessage(e.instance.props.channelStream[i], message);
 						else if (BDFDB.ArrayUtils.is(message)) for (let j in message) {
 							let childMessage = message[j].content;
 							if (childMessage && BDFDB.ArrayUtils.is(childMessage.attachments)) this.checkMessage(message[j], childMessage);
@@ -708,60 +713,54 @@ module.exports = (_ => {
 			}
 
 			processMessageReply (e) {
-				if (e.returnvalue && e.returnvalue.props && e.returnvalue.props.children) {
-					let referencedMessage = BDFDB.ObjectUtils.get(e, "returnvalue.props.children.props.referencedMessage.message");
-					if (referencedMessage && translatedMessages[referencedMessage.id]) {
-						e.returnvalue.props.children.props.referencedMessage = Object.assign({}, e.returnvalue.props.children.props.referencedMessage);
-						e.returnvalue.props.children.props.referencedMessage.message = new BDFDB.DiscordObjects.Message(e.returnvalue.props.children.props.referencedMessage.message);
-						e.returnvalue.props.children.props.referencedMessage.message.content = translatedMessages[referencedMessage.id].content;
-					}
-				}
+				if (!e.instance.props.referencedMessage || !e.instance.props.referencedMessage.message || !translatedMessages[e.instance.props.referencedMessage.message.id]) return;
+				e.instance.props.referencedMessage = Object.assign({}, e.instance.props.referencedMessage);
+				e.instance.props.referencedMessage.message = new BDFDB.DiscordObjects.Message(e.instance.props.referencedMessage.message);
+				e.instance.props.referencedMessage.message.content = translatedMessages[e.instance.props.referencedMessage.message.id].content;
 			}
 
 			processMessageContent (e) {
-				if (e.instance.props.message) {
-					let translation = translatedMessages[e.instance.props.message.id];
-					if (translation && translation.content) e.returnvalue.props.children.push(BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.TooltipContainer, {
-						text: `${BDFDB.LanguageUtils.getName(translation.input)} ➝ ${BDFDB.LanguageUtils.LibraryStrings.to} ${BDFDB.LanguageUtils.getName(translation.output)}`,
-						tooltipConfig: {style: "max-width: 400px"},
+				if (!e.instance.props.message) return;
+				let translation = translatedMessages[e.instance.props.message.id];
+				if (translation && translation.content) e.returnvalue.props.children.push(BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.TooltipContainer, {
+					text: `${BDFDB.LanguageUtils.getName(translation.input)} ➝ ${BDFDB.LanguageUtils.LibraryStrings.to} ${BDFDB.LanguageUtils.getName(translation.output)}`,
+					tooltipConfig: {style: "max-width: 400px"},
+					children: BDFDB.ReactUtils.createElement("span", {
+						className: BDFDB.DOMUtils.formatClassName(BDFDB.disCN.messagetimestamp, BDFDB.disCN.messagetimestampinline, BDFDB.disCN._translatortranslated),
 						children: BDFDB.ReactUtils.createElement("span", {
-							className: BDFDB.DOMUtils.formatClassName(BDFDB.disCN.messagetimestamp, BDFDB.disCN.messagetimestampinline, BDFDB.disCN._translatortranslated),
-							children: BDFDB.ReactUtils.createElement("span", {
-								className: BDFDB.disCN.messageedited,
-								children: `(${this.labels.translated_watermark})`
-							})
+							className: BDFDB.disCN.messageedited,
+							children: `(${this.labels.translated_watermark})`
 						})
-					}));
-				}
+					})
+				}));
 			}
 
 			processEmbed (e) {
-				if (e.instance.props.embed && e.instance.props.embed.message_id) {
-					let translation = translatedMessages[e.instance.props.embed.message_id];
-					if (translation && Object.keys(translation.embeds).length) {
-						if (!e.returnvalue) e.instance.props.embed = Object.assign({}, e.instance.props.embed, {
-							rawDescription: translation.embeds[e.instance.props.embed.id],
-							originalDescription: e.instance.props.embed.originalDescription || e.instance.props.embed.rawDescription
-						});
-						else {
-							let [children, index] = BDFDB.ReactUtils.findParent(e.returnvalue, {props: [["className", BDFDB.disCN.embeddescription]]});
-							if (index > -1) children[index].props.children.push(BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.TooltipContainer, {
-								text: `${BDFDB.LanguageUtils.getName(translation.input)} ➝ ${BDFDB.LanguageUtils.getName(translation.output)}`,
-								tooltipConfig: {style: "max-width: 400px"},
+				if (!e.instance.props.embed || !e.instance.props.embed.message_id) return;
+				let translation = translatedMessages[e.instance.props.embed.message_id];
+				if (translation && Object.keys(translation.embeds).length) {
+					if (!e.returnvalue) e.instance.props.embed = Object.assign({}, e.instance.props.embed, {
+						rawDescription: translation.embeds[e.instance.props.embed.id],
+						originalDescription: e.instance.props.embed.originalDescription || e.instance.props.embed.rawDescription
+					});
+					else {
+						let [children, index] = BDFDB.ReactUtils.findParent(e.returnvalue, {props: [["className", BDFDB.disCN.embeddescription]]});
+						if (index > -1) children[index].props.children.push(BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.TooltipContainer, {
+							text: `${BDFDB.LanguageUtils.getName(translation.input)} ➝ ${BDFDB.LanguageUtils.getName(translation.output)}`,
+							tooltipConfig: {style: "max-width: 400px"},
+							children: BDFDB.ReactUtils.createElement("span", {
+								className: BDFDB.DOMUtils.formatClassName(BDFDB.disCN.messagetimestamp, BDFDB.disCN.messagetimestampinline, BDFDB.disCN._translatortranslated),
 								children: BDFDB.ReactUtils.createElement("span", {
-									className: BDFDB.DOMUtils.formatClassName(BDFDB.disCN.messagetimestamp, BDFDB.disCN.messagetimestampinline, BDFDB.disCN._translatortranslated),
-									children: BDFDB.ReactUtils.createElement("span", {
-										className: BDFDB.disCN.messageedited,
-										children: `(${this.labels.translated_watermark})`
-									})
+									className: BDFDB.disCN.messageedited,
+									children: `(${this.labels.translated_watermark})`
 								})
-							}));
-						}
+							})
+						}));
 					}
-					else if (!e.returnvalue && e.instance.props.embed.originalDescription) {
-						e.instance.props.embed = Object.assign({}, e.instance.props.embed, {rawDescription: e.instance.props.embed.originalDescription});
-						delete e.instance.props.embed.originalDescription;
-					}
+				}
+				else if (!e.returnvalue && e.instance.props.embed.originalDescription) {
+					e.instance.props.embed = Object.assign({}, e.instance.props.embed, {rawDescription: e.instance.props.embed.originalDescription});
+					delete e.instance.props.embed.originalDescription;
 				}
 			}
 			
@@ -817,7 +816,7 @@ module.exports = (_ => {
 			getLanguageChoice (direction, place, channelId) {
 				this.setLanguages();
 				let choice;
-				let channel = channelId && BDFDB.LibraryModules.ChannelStore.getChannel(channelId);
+				let channel = channelId && BDFDB.LibraryStores.ChannelStore.getChannel(channelId);
 				let guildId = channel ? (channel.guild_id ? channel.guild_id : "@me") : null;
 				if (channelLanguages[channelId] && channelLanguages[channelId][place]) choice = channelLanguages[channelId][place][direction];
 				else if (guildId && guildLanguages[guildId] && guildLanguages[guildId][place]) choice = guildLanguages[guildId][place][direction];
@@ -828,7 +827,7 @@ module.exports = (_ => {
 			}
 
 			saveLanguageChoice (choice, direction, place, channelId) {
-				let channel = channelId && BDFDB.LibraryModules.ChannelStore.getChannel(channelId);
+				let channel = channelId && BDFDB.LibraryStores.ChannelStore.getChannel(channelId);
 				let guildId = channel ? (channel.guild_id ? channel.guild_id : "@me") : null;
 				if (channelLanguages[channelId] && channelLanguages[channelId][place]) {
 					channelLanguages[channelId][place][direction] = choice;
@@ -888,7 +887,7 @@ module.exports = (_ => {
 					callback(translation == text ? "" : translation, input, output);
 				};
 				let [newText, excepts, translate] = this.removeExceptions(text.trim(), place);
-				let channelId = BDFDB.LibraryModules.LastChannelStore.getChannelId();
+				let channelId = BDFDB.LibraryStores.SelectedChannelStore.getChannelId();
 				let input = Object.assign({}, languages[this.getLanguageChoice(languageTypes.INPUT, place, channelId)]);
 				let output = Object.assign({}, languages[this.getLanguageChoice(languageTypes.OUTPUT, place, channelId)]);
 				if (translate && input.id != output.id) {
@@ -1014,8 +1013,8 @@ module.exports = (_ => {
 			
 			iTranslateTranslate (data, callback) {
 				let translate = _ => {
-					BDFDB.LibraryRequires.request.post({
-						url: "https://web-api.itranslateapp.com/v3/texts/translate",
+					BDFDB.LibraryRequires.request("https://web-api.itranslateapp.com/v3/texts/translate", {
+						method: "post",
 						headers: {
 							"API-KEY": authKeys.itranslate && authKeys.itranslate.key || data.engine.APIkey
 						},
@@ -1109,8 +1108,8 @@ module.exports = (_ => {
 			
 			papagoTranslate (data, callback) {
 				const credentials = (authKeys.papago && authKeys.papago.key || "kUNGxtAmTJQFbaFehdjk zC70k3VhpM").split(" ");
-				BDFDB.LibraryRequires.request.post({
-					url: "https://openapi.naver.com/v1/papago/n2mt",
+				BDFDB.LibraryRequires.request("https://openapi.naver.com/v1/papago/n2mt", {
+					method: "post",
 					form: {
 						source: data.input.id,
 						target: data.output.id,
@@ -1145,16 +1144,17 @@ module.exports = (_ => {
 			}
 			
 			baiduTranslate (data, callback) {
-				const credentials = (authKeys.baidu && authKeys.baidu.key || "20210425000799880 e12h9h4rh39r8h12r8 D90usZcbznwthzKC1KOb").split(" ");
-				BDFDB.LibraryRequires.request.post({
-					url: "https://fanyi-api.baidu.com/api/trans/vip/translate",
+				const credentials = (authKeys.baidu && authKeys.baidu.key || "20221009001380882 TOPnUKz8jJ32AZNOuUhX").split(" ");
+				const salt = BDFDB.NumberUtils.generateId();
+				BDFDB.LibraryRequires.request("https://fanyi-api.baidu.com/api/trans/vip/translate", {
+					method: "post",
 					form: {
 						from: translationEngines.baidu.parser[data.input.id] || data.input.id,
 						to: translationEngines.baidu.parser[data.output.id] || data.output.id,
-						q: data.text,
+						q: encodeURIComponent(data.text),
 						appid: credentials[0],
-						salt: credentials[1],
-						sign: this.MD5(credentials[0] + data.text + credentials[1] + credentials[2])
+						salt: salt,
+						sign: this.MD5(credentials[0] + data.text + salt + (credentials[2] || credentials[1]))
 					}
 				}, (error, response, result) => {
 					if (!error && result && response.statusCode == 200) {

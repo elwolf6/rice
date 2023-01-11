@@ -1,6 +1,5 @@
 {
     "general": {
-        "emotes": true,
         "publicServers": true,
         "voiceDisconnect": false,
         "showToasts": true,
@@ -24,7 +23,7 @@
         "renderWhitespace": "selection"
     },
     "window": {
-        "transparency": false,
+        "transparency": true,
         "removeMinimumSize": false,
         "frame": false
     },

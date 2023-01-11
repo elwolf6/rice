@@ -1,8 +1,5 @@
 {
 	"all": {
-		"amounts": {
-			"hoverDelay": 0
-		},
 		"detailsSettings": {
 			"footnote": true,
 			"tooltip": false,
@@ -13,6 +10,7 @@
 			"Baidu": true,
 			"Bing": true,
 			"Google": true,
+			"GoogleLens": true,
 			"ImgOps": true,
 			"IQDB": true,
 			"Reddit": true,
@@ -22,8 +20,26 @@
 			"WhatAnime": true,
 			"Yandex": true
 		},
+		"galleryFilter": {
+			"3gp": true,
+			"avi": true,
+			"flv": true,
+			"jpeg": true,
+			"jpg": true,
+			"gif": true,
+			"mov": true,
+			"mp4": true,
+			"mpeg-1": true,
+			"mpeg-2": true,
+			"ogg": true,
+			"png": true,
+			"svg": true,
+			"webm": true,
+			"webp": true,
+			"wmv": true
+		},
 		"general": {
-			"nsfwMode": true
+			"nsfwMode": false
 		},
 		"places": {
 			"userAvatars": true,
@@ -35,25 +51,18 @@
 			"messages": "NONE",
 			"imageViewer": "NONE"
 		},
-		"resizeSettings": {
-			"messages": false,
-			"imageViewer": false
-		},
-		"scaleSettings": {
-			"messages": "NONE",
-			"imageViewer": "NONE"
-		},
 		"viewerSettings": {
 			"zoomMode": true,
 			"galleryMode": true,
 			"details": true,
 			"copyImage": true,
-			"saveImage": true
+			"saveImage": true,
+			"jumpTo": true
 		},
 		"zoomSettings": {
 			"lensSize": 200,
 			"pixelMode": false,
-			"zoomLevel": 1.0999999999999992
+			"zoomLevel": 2
 		}
 	}
 }

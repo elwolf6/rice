@@ -1,29 +1,27 @@
 {
 	"all": {
 		"changeLogs": {
-			"BDFDB": "2.3.2",
-			"CharCounter": "1.5.7",
-			"CompleteTimestamps": "1.6.1",
-			"CreationDate": "1.4.6",
-			"GameActivityToggle": "1.1.3",
-			"ImageUtilities": "4.8.5",
-			"OpenSteamLinksInApp": "1.1.4",
-			"ShowHiddenChannels": "9.9.9",
-			"StaffTag": "1.5.4",
-			"Translator": "2.4.1"
+			"BDFDB": "3.0.7",
+			"CharCounter": "1.6.2",
+			"CompleteTimestamps": "1.6.4",
+			"GameActivityToggle": "1.1.8",
+			"ImageUtilities": "5.0.8",
+			"LastMessageDate": "1.3.5",
+			"PluginRepo": "2.4.2",
+			"Translator": "2.4.9"
 		},
 		"choices": {
 			"toastPosition": "right"
 		},
 		"general": {
+			"shareData": true,
 			"showToasts": true,
-			"showSupportBadges": true,
-			"useChromium": false,
-			"shareData": true
+			"showSupportBadges": false,
+			"useChromium": false
 		},
 		"hashes": {
-			"0BDFDB.data.json": "07ff202a5639a8184e5362c4e55dfbbdcb9c6694",
-			"0BDFDB.raw.css": "b32c66f2299ded73c11822b8e903883e1dc7daa8"
+			"0BDFDB.data.json": "67c70a422687ccc7b142c248d6b9718d1a7ca627",
+			"0BDFDB.raw.css": "a1c4a8b6f28c4765c6af2853ddf13a35922a2b9e"
 		}
 	}
 }
