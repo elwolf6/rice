@@ -24,7 +24,7 @@ These dotfiles are intended to go with numerous suckless programs I use:
 
 - [dwm](https://github.com/elwolf6/dwm) (window manager)
 - [slstatus](https://github.com/elwolf6/slstatus) (statusbar)
-- [terminology](https://github.com/borisfaure/terminology) (terminal emulator)
+- [st](https://github.com/elwolf6/st) (terminal emulator)
 
 ## Install these dotfiles and all dependencies
 
