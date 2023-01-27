@@ -1,3 +1,2 @@
-2023/01/21-23:58:34.813 3 Reusing MANIFEST /home/marroq/.config/microsoft-edge/Default/Session Storage/MANIFEST-000001
-2023/01/21-23:58:34.813 3 Recovering log #3
-2023/01/21-23:58:34.813 3 Reusing old log /home/marroq/.config/microsoft-edge/Default/Session Storage/000003.log 
+2023/01/27-18:49:40.832 3 Creating DB /home/marroq/.config/microsoft-edge/Default/Session Storage__tmp_for_rebuild since it was missing.
+2023/01/27-18:49:40.836 3 Reusing MANIFEST /home/marroq/.config/microsoft-edge/Default/Session Storage__tmp_for_rebuild/MANIFEST-000001

@@ -1,3 +1,2 @@
-2023/01/21-23:58:34.812 27ba Reusing MANIFEST /home/marroq/.config/microsoft-edge/Default/Service Worker/Database/MANIFEST-000001
-2023/01/21-23:58:34.812 27ba Recovering log #3
-2023/01/21-23:58:34.812 27ba Reusing old log /home/marroq/.config/microsoft-edge/Default/Service Worker/Database/000003.log 
+2023/01/27-18:49:40.832 1cd5 Creating DB /home/marroq/.config/microsoft-edge/Default/Service Worker/Database__tmp_for_rebuild since it was missing.
+2023/01/27-18:49:40.835 1cd5 Reusing MANIFEST /home/marroq/.config/microsoft-edge/Default/Service Worker/Database__tmp_for_rebuild/MANIFEST-000001
