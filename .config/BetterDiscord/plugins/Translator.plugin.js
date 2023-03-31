@@ -2,7 +2,7 @@
  * @name Translator
  * @author DevilBro
  * @authorId 278543574059057154
- * @version 2.4.9
+ * @version 2.5.4
  * @description Allows you to translate Messages and your outgoing Messages within Discord
  * @invite Jx3TjNS
  * @donate https://www.paypal.me/MircoWittrien
@@ -135,7 +135,7 @@ module.exports = (_ => {
 								titleChildren: direction == languageTypes.OUTPUT && [{
 									text: _ => isChannelSpecific ? _this.labels.language_selection_channel : isGuildSpecific ? _this.labels.language_selection_server : _this.labels.language_selection_global,
 									name: isChannelSpecific || isGuildSpecific ? BDFDB.LibraryComponents.SvgIcon.Names.LOCK_CLOSED : BDFDB.LibraryComponents.SvgIcon.Names.LOCK_OPEN,
-									color: isChannelSpecific ? BDFDB.DiscordConstants.ColorVariables["status-danger"] : isGuildSpecific ? BDFDB.DiscordConstants.ColorVariables["status-warning"] : null,
+									color: isChannelSpecific ? "var(--status-danger)" : isGuildSpecific ? "var(--status-warning)" : null,
 									onClick: _ => {
 										if (channelLanguages[this.props.channelId] && channelLanguages[this.props.channelId][place]) {
 											isChannelSpecific = false;
@@ -210,7 +210,7 @@ module.exports = (_ => {
 													nativeClass: true,
 													width: 20,
 													height: 20,
-													color: BDFDB.DiscordConstants.ColorVariables["status-danger"],
+													color: "var(--status-danger)",
 													name: BDFDB.LibraryComponents.SvgIcon.Names.WARNING
 												})
 											}),
@@ -632,31 +632,32 @@ module.exports = (_ => {
 			}
 		
 			processMessageToolbar (e) {
-				if (e.instance.props.expanded && e.instance.props.message && e.instance.props.channel) {
-					let translated = !!translatedMessages[e.instance.props.message.id];
-					e.returnvalue.props.children.unshift();
-					e.returnvalue.props.children.unshift(BDFDB.ReactUtils.createElement(class extends BdApi.React.Component {
-						render() {
-							return BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.TooltipContainer, {
-								key: translated ? "untranslate-message" : "translate-message",
-								text: _ => translated ? _this.labels.context_messageuntranslateoption : _this.labels.context_messagetranslateoption,
-								children: BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.Clickable, {
-									className: BDFDB.disCN.messagetoolbarbutton,
-									onClick: _ => {
-										if (!isTranslating) _this.translateMessage(e.instance.props.message, e.instance.props.channel).then(_ => {
-											translated = !!translatedMessages[e.instance.props.message.id];
-											BDFDB.ReactUtils.forceUpdate(this);
-										});
-									},
-									children: BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.SvgIcon, {
-										className: BDFDB.disCN.messagetoolbaricon,
-										iconSVG: translated ? translateIconUntranslate : translateIcon
-									})
+				if (!e.instance.props.message || !e.instance.props.channel) return;
+				let expanded = !BDFDB.LibraryStores.AccessibilityStore.keyboardModeEnabled && !e.instance.props.showEmojiPicker && !e.instance.props.showEmojiBurstPicker && !e.instance.props.showMoreUtilities && BDFDB.ListenerUtils.isPressed(16);
+				if (!expanded) return;
+				let translated = !!translatedMessages[e.instance.props.message.id];
+				e.returnvalue.props.children.unshift();
+				e.returnvalue.props.children.unshift(BDFDB.ReactUtils.createElement(class extends BdApi.React.Component {
+					render() {
+						return BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.TooltipContainer, {
+							key: translated ? "untranslate-message" : "translate-message",
+							text: _ => translated ? _this.labels.context_messageuntranslateoption : _this.labels.context_messagetranslateoption,
+							children: BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.Clickable, {
+								className: BDFDB.disCN.messagetoolbarbutton,
+								onClick: _ => {
+									if (!isTranslating) _this.translateMessage(e.instance.props.message, e.instance.props.channel).then(_ => {
+										translated = !!translatedMessages[e.instance.props.message.id];
+										BDFDB.ReactUtils.forceUpdate(this);
+									});
+								},
+								children: BDFDB.ReactUtils.createElement(BDFDB.LibraryComponents.SvgIcon, {
+									className: BDFDB.disCN.messagetoolbaricon,
+									iconSVG: translated ? translateIconUntranslate : translateIcon
 								})
-							});
-						}
-					}));
-				}
+							})
+						});
+					}
+				}));
 			}
 			
 			processChannelTextAreaContainer (e) {
@@ -1314,7 +1315,7 @@ module.exports = (_ => {
 			addExceptions (string, excepts) {
 				for (let count in excepts) {
 					let exception = BDFDB.ArrayUtils.is(this.settings.exceptions.wordStart) && this.settings.exceptions.wordStart.some(n => excepts[count].indexOf(n) == 0) ? excepts[count].slice(1) : excepts[count];
-					let newString = string.replace(new RegExp(BDFDB.StringUtils.regEscape(`{{${count}}}`)), exception);
+					let newString = string.replace(new RegExp(`[｛\{]\\s*[｛\{]\\s*${count}\\s*[｝\}]\\s*[｝\}]`), exception);
 					if (newString == string) string = newString + " " + exception;
 					else string = newString;
 				}
@@ -1322,16 +1323,17 @@ module.exports = (_ => {
 			}
 
 			removeExceptions (string, place) {
+				let emojiRegex = /[\uD83C-\uDBFF\uDC00-\uDFFF]+/;
 				let excepts = {}, newString = [], count = 0;
 				if (place == messageTypes.RECEIVED) {
 					let text = [], i = 0;
-					string.split("").forEach(chara => { 
-						if (chara == "<" && text[i]) i++;
+					string.split("").forEach((chara, index, array) => { 
+						if (chara == "<" && text[i] || emojiRegex.test(chara) && emojiRegex.test(array[index+1])) i++;
 						text[i] = text[i] ? text[i] + chara : chara;
-						if (chara == ">") i++;
+						if (chara == ">" || emojiRegex.test(chara) && emojiRegex.test(array[index-1])) i++;
 					});
 					for (let j in text) {
-						if (text[j].indexOf("<") == 0) {
+						if (text[j].indexOf("<") == 0 || emojiRegex.test(text[j])) {
 							newString.push(`{{${count}}}`);
 							excepts[count] = text[j];
 							count++;
@@ -1342,7 +1344,7 @@ module.exports = (_ => {
 				else {
 					let usedExceptions = BDFDB.ArrayUtils.is(this.settings.exceptions.wordStart) ? this.settings.exceptions.wordStart : [];
 					string.split(" ").forEach(word => {
-						if (word.indexOf("<@!") == 0 || word.indexOf("<#") == 0 || word.indexOf(":") == 0 || word.indexOf("<:") == 0 || word.indexOf("<a:") == 0 || word.indexOf("@") == 0 || word.indexOf("#") == 0 || usedExceptions.some(n => word.indexOf(n) == 0 && word.length > 1)) {
+						if (emojiRegex.test(word) || word.indexOf("<@!") == 0 || word.indexOf("<#") == 0 || word.indexOf(":") == 0 || word.indexOf("<:") == 0 || word.indexOf("<a:") == 0 || word.indexOf("@") == 0 || word.indexOf("#") == 0 || usedExceptions.some(n => word.indexOf(n) == 0 && word.length > 1)) {
 							newString.push(`{{${count}}}`);
 							excepts[count] = word;
 							count++;
