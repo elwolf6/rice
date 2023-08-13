@@ -11,12 +11,12 @@
         },
         "userCounter": {
             "enabled": true,
-            "enableTime": 1670217928579,
-            "lastSubmission": 1680191778114
+            "enableTime": 1683317569072,
+            "lastSubmission": 1691802148684
         }
     },
     "currentVersionInfo": {
-        "version": "1.4.11",
+        "version": "1.4.13",
         "hasShownChangelog": true
     }
 }

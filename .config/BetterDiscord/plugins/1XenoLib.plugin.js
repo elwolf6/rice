@@ -3,7 +3,7 @@
  * @description Simple library to complement plugins with shared code without lowering performance. Also adds needed buttons to some plugins.
  * @author 1Lighty
  * @authorId 239513071272329217
- * @version 1.4.11
+ * @version 1.4.13
  * @invite NYvWdN5
  * @donate https://paypal.me/lighty13
  * @source https://github.com/1Lighty/BetterDiscordPlugins/blob/master/Plugins/1XenoLib.plugin.js
@@ -33,7 +33,7 @@
 
 @else@*/
 /*
- * Copyright © 2019-2022, _Lighty_
+ * Copyright © 2019-2023, _Lighty_
  * All rights reserved.
  * Code may not be redistributed, modified or otherwise taken without explicit permission.
  */
@@ -106,7 +106,7 @@ module.exports = (() => {
           twitter_username: ''
         }
       ],
-      version: '1.4.11',
+      version: '1.4.13',
       description: 'Simple library to complement plugins with shared code without lowering performance. Also adds needed buttons to some plugins.',
       github: 'https://github.com/1Lighty',
       github_raw: 'https://raw.githubusercontent.com/1Lighty/BetterDiscordPlugins/master/Plugins/1XenoLib.plugin.js'
@@ -217,7 +217,7 @@ module.exports = (() => {
     if (window.__XL_waitingForWatcherTimeout) clearTimeout(window.__XL_waitingForWatcherTimeout);
 
     try {
-      //PluginUpdater.checkForUpdate(config.info.name, config.info.version, config.info.github_raw);
+      PluginUpdater.checkForUpdate(config.info.name, config.info.version, config.info.github_raw);
     } catch (err) {
     }
 
@@ -326,7 +326,7 @@ module.exports = (() => {
     XenoLib.getClass.__warns = {};
     XenoLib.getSingleClass.__warns = {};
 
-    const NOOP = () => {};
+    const NOOP = () => { };
     const NOOP_NULL = () => null;
 
     const originalFunctionClass = Function;
@@ -381,7 +381,7 @@ module.exports = (() => {
             LibrarySettings.userCounter.lastSubmission = Date.now();
             changed = true;
             require('https').get('https://astranika.com/api/analytics/submit', res => {
-              res.on('error', () => {});
+              res.on('error', () => { });
             });
           }
         } else {
@@ -682,17 +682,17 @@ module.exports = (() => {
     XenoLib.authorId = '239513071272329217';
     XenoLib.supportServerId = '389049952732446731';
 
-/*     try {
-      const getUserAsync = WebpackModules.getByProps('getUser', 'acceptAgreements').getUser;
-      const requestUser = () =>
-        getUserAsync(XenoLib.authorId)
-          .then(user => (XenoLib.author = user))
-          .catch(() => setTimeout(requestUser, 1 * 60 * 1000));
-      if (UserStore.getUser(XenoLib.authorId)) XenoLib.author = UserStore.getUser(XenoLib.authorId);
-      else requestUser();
-    } catch (e) {
-      Logger.stacktrace('Failed to grab author object', e);
-    } */
+    /*     try {
+          const getUserAsync = WebpackModules.getByProps('getUser', 'acceptAgreements').getUser;
+          const requestUser = () =>
+            getUserAsync(XenoLib.authorId)
+              .then(user => (XenoLib.author = user))
+              .catch(() => setTimeout(requestUser, 1 * 60 * 1000));
+          if (UserStore.getUser(XenoLib.authorId)) XenoLib.author = UserStore.getUser(XenoLib.authorId);
+          else requestUser();
+        } catch (e) {
+          Logger.stacktrace('Failed to grab author object', e);
+        } */
 
     XenoLib.ReactComponents = {};
 
@@ -752,20 +752,20 @@ module.exports = (() => {
       const oUseState = ReactDispatcher.useState;
       const oUseTransition = ReactDispatcher.useTransition;
 
-      ReactDispatcher.useCallback = options.useCallback || (() => () => {});
+      ReactDispatcher.useCallback = options.useCallback || (() => () => { });
       ReactDispatcher.useContext = options.useContext || (context => context._currentValue);
-      ReactDispatcher.useDebugValue = options.useDebugValue || (() => {});
+      ReactDispatcher.useDebugValue = options.useDebugValue || (() => { });
       ReactDispatcher.useDeferredValue = options.useDeferredValue || (val => val);
-      ReactDispatcher.useEffect = options.useEffect || (() => {});
-      ReactDispatcher.useImperativeHandle = options.useImperativeHandle || (() => {});
-      ReactDispatcher.useLayoutEffect = options.useLayoutEffect || (() => {});
+      ReactDispatcher.useEffect = options.useEffect || (() => { });
+      ReactDispatcher.useImperativeHandle = options.useImperativeHandle || (() => { });
+      ReactDispatcher.useLayoutEffect = options.useLayoutEffect || (() => { });
       ReactDispatcher.useMemo = options.useMemo || (memo => memo());
-      ReactDispatcher.useMutableSource = options.useMutableSource || (() => {});
+      ReactDispatcher.useMutableSource = options.useMutableSource || (() => { });
       ReactDispatcher.useOpaqueIdentifier = options.useOpaqueIdentifier || (() => rand());
-      ReactDispatcher.useReducer = options.useReducer || ((_, val) => [val, () => {}]);
+      ReactDispatcher.useReducer = options.useReducer || ((_, val) => [val, () => { }]);
       ReactDispatcher.useRef = options.useRef || (() => ({ current: null }));
-      ReactDispatcher.useState = options.useState || (() => [null, () => {}]);
-      ReactDispatcher.useTransition = options.useTransition || (() => [() => {}, true]);
+      ReactDispatcher.useState = options.useState || (() => [null, () => { }]);
+      ReactDispatcher.useTransition = options.useTransition || (() => [() => { }, true]);
 
       if (typeof options.preExecutor === 'function') options.preExecutor();
 
@@ -859,7 +859,7 @@ module.exports = (() => {
                   if (deeperRet?.props?.children?.type) ({ type } = deeperRet.props.children);
                 }
               }, {
-                useState: () => [[], () => {}],
+                useState: () => [[], () => { }],
                 useCallback: e => e
               });
 
@@ -904,16 +904,24 @@ module.exports = (() => {
 
 
     try {
-      XenoLib.ReactComponents.ButtonOptions = WebpackModules.getByProps('BorderColors');
+      XenoLib.ReactComponents.ButtonOptions = (() => {
+        let ret = null;
+        ZeresPluginLibrary.WebpackModules.getModule(e => {
+          for (const val of Object.values(e)) {
+            if (typeof val !== 'function') continue;
+            if (val.BorderColors) {
+              ret = val;
+              return true;
+            }
+          }
+          return false;
+        });
+        return ret;
+      })();
       XenoLib.ReactComponents.Button = XenoLib.ReactComponents.ButtonOptions;
     } catch (e) {
       Logger.stacktrace('Error getting Button component', e);
     }
-
-    const path = require('path');
-    const isBBDBeta = typeof window.BDModules !== 'undefined' && !window.require && typeof window.BetterDiscordConfig !== 'undefined' && path.normalize(__dirname).replace(/[\\\/]/g, '/').toLowerCase().indexOf('rd_bd/plugins') !== -1;
-    // why zere?
-    if (isBBDBeta) Object.assign(window, require('timers'));
 
     function patchAddonCardAnyway(manualPatch) {
       try {
@@ -1478,13 +1486,13 @@ module.exports = (() => {
                     {},
                     Array.isArray(e)
                       ? e.map(e =>
-                        (Array.isArray(e)
-                          ? React.createElement(
-                            'ul',
-                            {},
-                            e.map(e => React.createElement('li', {}, FancyParser(e)))
-                          )
-                          : FancyParser(e)))
+                      (Array.isArray(e)
+                        ? React.createElement(
+                          'ul',
+                          {},
+                          e.map(e => React.createElement('li', {}, FancyParser(e)))
+                        )
+                        : FancyParser(e)))
                       : FancyParser(e)
                   )
                 ))
@@ -1779,12 +1787,12 @@ module.exports = (() => {
         const ReactSpring = (() => {
           const olfilter = Array.prototype.filter
           Array.prototype.filter = function (callbackFn, thisArg) {
-              return [];
+            return [];
           }
           try {
-              return WebpackModules.getByProps('useTransition')
+            return WebpackModules.getByProps('useTransition')
           } finally {
-              Array.prototype.filter = olfilter;
+            Array.prototype.filter = olfilter;
           }
         })();
 
@@ -1799,7 +1807,25 @@ module.exports = (() => {
           return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
-        const BadgesModule = WebpackModules.getByProps('NumberBadge');
+        const NumberBadge = (() => {
+          let ret = null;
+          ZeresPluginLibrary.WebpackModules.getModule(e => {
+            for (const val of Object.values(e)) {
+              if (typeof val !== 'function') continue;
+              try {
+                const cont = val.toString();
+                if (!cont.includes('.STATUS_DANGER') || !cont.includes('.numberBadge')) continue;
+              } catch (err) {
+                console.log(err, val);
+                continue;
+              }
+              ret = val;
+              return true;
+            }
+            return false;
+          });
+          return ret;
+        })();
         const CloseButton = React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 24 24' }, React.createElement('path', { d: 'M18.4 4L12 10.4L5.6 4L4 5.6L10.4 12L4 18.4L5.6 20L12 13.6L18.4 20L20 18.4L13.6 12L20 5.6L18.4 4Z', fill: 'currentColor' }));
         class Notification extends React.PureComponent {
           constructor(props) {
@@ -1969,8 +1995,8 @@ module.exports = (() => {
                     await next({ opacity: 1, height: this._contentRef.offsetHeight, loadbrightness: 1 });
                     if (this.props.timeout) await next({ progress: 0 });
                     else
-                    if (this.state.loading && this.state.progress !== -1) await next({ progress: 0 });
-                    else await next({ progress: 100 });
+                      if (this.state.loading && this.state.progress !== -1) await next({ progress: 0 });
+                      else await next({ progress: 100 });
 
 
                     return;
@@ -2097,7 +2123,7 @@ module.exports = (() => {
                       },
                       CloseButton
                     ),
-                    this.state.counter > 1 && BadgesModule.NumberBadge({ count: this.state.counter, className: 'xenLib-notification-counter', color: '#2196f3' }),
+                    this.state.counter > 1 && NumberBadge({ count: this.state.counter, className: 'xenLib-notification-counter', color: '#2196f3' }),
                     this.state.contentParsed
                   )
                 )
@@ -2247,10 +2273,18 @@ module.exports = (() => {
       }
     }
 
+    const ThemeProvider = WebpackModules.getModule(m => m?.toString?.().includes("amoled:") && m?.toString?.().includes("Provider"), { searchExports: true });
+    const useStateFromStores = WebpackModules.getModule(m => m.toString?.().includes("useStateFromStores"));
+    const ThemeStore = WebpackModules.getModule(m => m.theme);
+
+    function DiscordThemeProviderWrapper(props) {
+      const theme = useStateFromStores([ThemeStore], () => ThemeStore.theme);
+      return React.createElement(ThemeProvider, { theme }, props.children);
+    }
 
     class SwitchItemWrapper extends React.PureComponent {
       render() {
-        return React.createElement(DiscordModules.SwitchRow, this.props);
+        return React.createElement(DiscordThemeProviderWrapper, {}, React.createElement(DiscordModules.SwitchRow, this.props));
       }
     }
 
@@ -2335,8 +2369,8 @@ module.exports = (() => {
      * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
     */
     XenoLib.versionComparator = (currentVersion, remoteVersion) => {
-      currentVersion = currentVersion.split(".").map((e) => {return parseInt(e);});
-      remoteVersion = remoteVersion.split(".").map((e) => {return parseInt(e);});
+      currentVersion = currentVersion.split(".").map((e) => { return parseInt(e); });
+      remoteVersion = remoteVersion.split(".").map((e) => { return parseInt(e); });
 
       if (remoteVersion[0] > currentVersion[0]) return true;
       else if (remoteVersion[0] == currentVersion[0] && remoteVersion[1] > currentVersion[1]) return true;

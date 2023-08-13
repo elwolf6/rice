@@ -3,7 +3,7 @@
 * @displayName PlatformIndicators
 * @authorId 415849376598982656
 * @invite gvA2ree
-* @version 1.4.0
+* @version 1.4.2
 */
 /*@cc_on
 @if (@_jscript)
@@ -40,17 +40,17 @@ module.exports = (() => {
                     twitter_username: "Strencher3"
                 }
             ],
-            version: "1.4.0",
+            version: "1.4.2",
             description: "Adds indicators for every platform that the user is using. Source code available on the repo in the 'src' folder.",
             github: "https://github.com/Strencher/BetterDiscordStuff/blob/master/PlatformIndicators/APlatformIndicators.plugin.js",
             github_raw: "https://raw.githubusercontent.com/Strencher/BetterDiscordStuff/master/PlatformIndicators/APlatformIndicators.plugin.js"
         },
         changelog: [
             {
-                title: "v1.4.0",
+                title: "v1.4.2",
                 type: "fixed",
                 items: [
-                    "The plugin was rewritten from the ground up to be compatible with discord's newest changes. It now uses DOM Manipulation instead of react patching."
+                    "Fixed indicators not showing in user popout for new usernames.",
                 ]
             },
         ],
@@ -160,12 +160,14 @@ module.exports = (() => {
             const SessionsStore = WebpackModules.getByProps("getSessions", "_dispatchToken");
             const friendsRowClasses = WebpackModules.getByProps("hovered", "discriminator");
  
-            const {Webpack, Webpack: {Filters}} = BdApi;
-            const [ChatHeader, NameTag, MemberListItem, DirectMessage] = Webpack.getBulk.apply(null, [
+            const {DOM, Webpack, Webpack: {Filters}} = BdApi;
+            const [ChatHeader, NameTag, MemberListItem, DirectMessage, NewUserName, {LayerClassName = ""} = {}] = Webpack.getBulk.apply(null, [
                 Filters.byProps("replyAvatar", "sizeEmoji"),
                 Filters.byProps("bot", "nameTag"),
                 Filters.byProps("wrappedName", "nameAndDecorators"),
-                Filters.byProps("wrappedName", "nameAndDecorators", "selected"),
+                Filters.combine(Filters.byProps("wrappedName", "nameAndDecorators"), m => !m.container),
+                Filters.byProps("discrimBase", "userTagUsernameBase"),
+                Filters.byProps("LayerClassName")
             ].map(fn => ({filter: fn})));
 
             class StringUtils {
@@ -281,16 +283,18 @@ module.exports = (() => {
                         ]
                     });
 
-                    this.target.addEventListener("mouseenter", () => {
+                    target.addEventListener("mouseenter", () => {
                         this.show();    
                     });
 
-                    this.target.addEventListener("mouseleave", () => {
+                    target.addEventListener("mouseleave", () => {
                         this.hide();
                     });
+
+                    this.tooltip._unmount = DOM.onRemoved(target, () => this.hide());
                 }
 
-                get container() {return document.querySelector(".layerContainer-2v_Sit ~ .layerContainer-2v_Sit");}
+                get container() {return document.querySelector(`.${LayerClassName} ~ .${LayerClassName}`);}
 
                 checkOffset(x, y) {
                     if (y < 0) {
@@ -339,17 +343,18 @@ module.exports = (() => {
                     target._patched = true;
 
                     this.container = createElement("div", {
-                        "data-id": this.id,
+                        "data-id": userId,
                         className: Utilities.className("PI-indicatorContainer", "PI-type_" + type),
                     });
 
-                    DOMTools.onRemoved(target, () => this.unmount());
+                    this._stopObserver = DOM.onRemoved(target, () => this.unmount());
 
                     StoreWatcher.onChange(this.handleChange);
                 }
 
                 unmount() {
                     this.ref?.remove();
+                    this._stopObserver?.();
                     this._destroyed = true;
                     StoreWatcher.offChange(this.handleChange);
                     this.target._patched = false;
@@ -464,24 +469,29 @@ module.exports = (() => {
                     for (const el of elements) {
                         if (el.getElementsByClassName("PI-indicatorContainer").length || el._patched) continue;
 
-                        const user = getReactProps(el.parentElement)?.message?.author;
+                        const user = getReactProps(el.parentElement, e => e?.message)?.message?.author;
 
                         if (user) {
                             new StatusIndicators(el, user.id, "Chat").mount();
                         }
                     }
                 },
-                [NameTag?.nameTag ?? "unknown"]: elements => {
-                    for (const el of elements) {
-                        if (el.getElementsByClassName("PI-indicatorContainer").length || el._patched) continue;
-
-                        const user = getReactProps(el, e => e?.user)?.user;
-
-                        if (user) {
-                            new StatusIndicators(el, user.id, "Tags").mount();
+                ...Object.fromEntries([NameTag?.nameTag, NewUserName?.userTagWithNickname]
+                    .filter(Boolean)
+                    .map(className => [
+                        className,
+                        elements => {
+                            for (const el of elements) {
+                                if (el.getElementsByClassName("PI-indicatorContainer").length || el._patched) continue;
+        
+                                const user = getReactProps(el, e => e?.user)?.user;
+                                if (user) {
+                                    new StatusIndicators(el, user.id, "Tags").mount();
+                                }
+                            }
                         }
-                    }
-                },
+                    ])
+                ),
                 ...Object.fromEntries([MemberListItem?.nameAndDecorators, DirectMessage?.nameAndDecorators]
                     .filter(Boolean)
                     .map(className => [
@@ -543,6 +553,11 @@ module.exports = (() => {
                         top: 1px;
                     }
 
+                    .PI-indicatorContainer.PI-type_Chat {
+                        margin-right: -6px;
+                        vertical-align: top;
+                    }
+
                     .${friendsRowClasses.userInfo} .PI-indicatorContainer > div {display: inline-flex;}
  
                     .${friendsRowClasses.userInfo} .${friendsRowClasses.discriminator} {
@@ -585,6 +600,7 @@ module.exports = (() => {
                     StoreWatcher._listeners.clear();
                     PluginUtilities.removeStyle(config.info.name);
                     document.querySelectorAll(".PI-indicatorContainer").forEach(el => el._unmount?.());
+                    document.querySelectorAll(".PI-tooltip").forEach(n => (n?._unmount?.(), n.remove()));
                 }
             };
         };

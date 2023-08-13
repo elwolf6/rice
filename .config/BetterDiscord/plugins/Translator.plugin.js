@@ -2,7 +2,7 @@
  * @name Translator
  * @author DevilBro
  * @authorId 278543574059057154
- * @version 2.5.4
+ * @version 2.5.8
  * @description Allows you to translate Messages and your outgoing Messages within Discord
  * @invite Jx3TjNS
  * @donate https://www.paypal.me/MircoWittrien
@@ -14,7 +14,9 @@
 
 module.exports = (_ => {
 	const changeLog = {
-		
+		"fixed": {
+			"Papago": "works again"
+		}
 	};
 	
 	return !window.BDFDB_Global || (!window.BDFDB_Global.loaded && !window.BDFDB_Global.started) ? class {
@@ -293,7 +295,7 @@ module.exports = (_ => {
 				name: "DeepL",
 				auto: true,
 				funcName: "deepLTranslate",
-				languages: ["bg","cs","da","de","en","el","es","et","fi","fr","hu","it","ja","lt","lv","nl","pl","pt","ro","ru","sk","sl","sv","zh"],
+				languages: ["bg","cs","da","de","en","el","es","et","fi","fr","hu","id","it","ja","ko","lt","lv","nl","no","pl","pt","ro","ru","sk","sl","sv","tr","uk","zh"],
 				premium: true,
 				key: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:fx"
 			},
@@ -322,7 +324,7 @@ module.exports = (_ => {
 				name: "Baidu",
 				auto: true,
 				funcName: "baiduTranslate",
-				languages: ["ar","bg","cs","da","de","el","en","es","et","fi","fr","hu","it","jp","ko","nl","pl","pt","ro","ru","sl","sv","th","vi","zh","zh-CN","zh-TW"],
+				languages: ["ar","bg","cs","da","de","el","en","es","et","fi","fr","hu","it","ja","ko","nl","pl","pt","ro","ru","sl","sv","th","vi","zh","zh-CN","zh-TW"],
 				parser: {
 					"ar": "ara",
 					"bg": "bul",
@@ -331,6 +333,7 @@ module.exports = (_ => {
 					"et": "est",
 					"fi": "fin",
 					"fr": "fra",
+					"ja": "jp",
 					"ko": "kor",
 					"ro": "rom",
 					"sl": "slo",
@@ -340,7 +343,7 @@ module.exports = (_ => {
 					"zh-CN": "zh",
 					"zh-TW": "cht"
 				},
-				key: "appId (number) key (string)"
+				key: "xxxxxxxxxx xxxxxxxxxxxxxxxxxxxx"
 			}
 		};
 		
@@ -554,15 +557,15 @@ module.exports = (_ => {
 						disabled: !translated && isTranslating,
 						action: _ => this.translateMessage(e.instance.props.message, e.instance.props.channel)
 					}));
-					this.injectSearchItem(e);
+					this.injectSearchItem(e, false);
 				}
 			}
 			
 			onTextAreaContextMenu (e) {
-				this.injectSearchItem(e);
+				this.injectSearchItem(e, true);
 			}
 			
-			injectSearchItem (e) {
+			injectSearchItem (e, ownMessage) {
 				let text = document.getSelection().toString();
 				if (text) {
 					let translating, foundTranslation, foundInput, foundOutput;
@@ -600,7 +603,7 @@ module.exports = (_ => {
 									}
 									else if (!translating) {
 										translating = true;
-										this.translateText(text, messageTypes.RECEIVED, (translation, input, output) => {
+										this.translateText(text, ownMessage ? messageTypes.SENT : messageTypes.RECEIVED, (translation, input, output) => {
 											if (translation) {
 												foundTranslation = translation, foundInput = input, foundOutput = output;
 												createTooltip();
@@ -684,7 +687,7 @@ module.exports = (_ => {
 			
 			processChannelTextAreaButtons (e) {
 				if (!this.settings.general.addTranslateButton || e.instance.props.disabled || e.instance.props.type != BDFDB.DiscordConstants.ChannelTextAreaTypes.NORMAL && e.instance.props.type != BDFDB.DiscordConstants.ChannelTextAreaTypes.NORMAL_WITH_ACTIVITY && e.instance.props.type != BDFDB.DiscordConstants.ChannelTextAreaTypes.SIDEBAR) return;
-				e.returnvalue.props.children.unshift(BDFDB.ReactUtils.createElement(TranslateButtonComponent, {
+				if (e.returnvalue) e.returnvalue.props.children.unshift(BDFDB.ReactUtils.createElement(TranslateButtonComponent, {
 					guildId: e.instance.props.channel.guild_id ? e.instance.props.channel.guild_id : "@me",
 					channelId: e.instance.props.channel.id
 				}));
@@ -1118,7 +1121,8 @@ module.exports = (_ => {
 					},
 					headers: {
 						"X-Naver-Client-Id": credentials[0],
-						"X-Naver-Client-Secret": credentials[1]
+						"X-Naver-Client-Secret": credentials[1],
+						"Content-Type": "application/x-www-form-urlencoded"
 					}
 				}, (error, response, body) => {
 					if (!error && body && response.statusCode == 200) {
@@ -1499,35 +1503,35 @@ module.exports = (_ => {
 						};
 					case "el":		// Greek
 						return {
-							backup_engine:						"Backup-Μεταφράστης",
-							backup_engine_warning:				"Θα χρησιμοποιήσει Backup-Μεταφράστης",
+							backup_engine:						"Μεταφράστης-Αντίγραφο ασφαλείας",
+							backup_engine_warning:				"Θα χρησιμοποιηθεί Μεταφράστης-Αντίγραφο ασφαλείας",
 							context_messagetranslateoption:		"Μετάφραση μηνύματος",
-							context_messageuntranslateoption:	"Μη μετάφραση μηνύματος",
+							context_messageuntranslateoption:	"Αναίρεση μετάφρασης μηνύματος",
 							context_translator:					"Αναζήτηση μετάφρασης",
 							detect_language:					"Εντοπισμός γλώσσας",
 							error_dailylimit:					"Συμπληρώθηκε το ημερήσιο όριο αιτημάτων.",
-							error_hourlylimit:					"Συμπληρώθηκε το ωριαίο όριο αιτήματος.",
+							error_hourlylimit:					"Συμπληρώθηκε το ωριαίο όριο αιτημάτων.",
 							error_keyoutdated:					"Το κλειδί API δεν είναι ενημερωμένο.",
 							error_monthlylimit:					"Συμπληρώθηκε το μηνιαίο όριο αιτημάτων.",
 							error_serverdown:					"Ο διακομιστής μετάφρασης ενδέχεται να είναι εκτός σύνδεσης.",
-							exception_text:						"Οι λέξεις που ξεκινούν με {{var0}} θα αγνοηθούν",
-							general_addTranslateButton:			"Προσθέτει ένα κουμπί μετάφρασης στο Channel Textarea",
-							general_sendOriginalMessage:		"Επίσης στέλνει το αρχικό Μήνυμα κατά τη μετάφραση του απεσταλμένου μηνύματός σας",
-							general_showOriginalMessage:		"Εμφανίζει επίσης το αρχικό Μήνυμα κατά τη μετάφραση ενός ληφθέντος μηνύματος",
-							general_usePerChatTranslation:		"Ενεργοποιεί/απενεργοποιεί την κατάσταση του κουμπιού μεταφραστή ανά κανάλι και όχι καθολικά",
+							exception_text:						"Οι λέξεις θα αγνοηθούν που ξεκινούν με {{var0}}",
+							general_addTranslateButton:			"Προσθήκη κουμπιού μετάφρασης στην Περιοχή κειμένου του Καναλιού",
+							general_sendOriginalMessage:		"Αποστολή αρχικού Μηνύματος με τη μετάφραση απεσταλμένου μηνύματος",
+							general_showOriginalMessage:		"Εμφάνιση αρχικού Μηνύματος με τη μετάφραση ενός ληφθέντος μηνύματος",
+							general_usePerChatTranslation:		"(Απ)Ενεργοποίηση κατάστασης κουμπιού μεταφραστή ανά κανάλι",
 							language_choice_input_received:		"Γλώσσα εισαγωγής στα ληφθέντα μηνύματα",
-							language_choice_input_sent:			"Εισαγάγετε τη γλώσσα στα απεσταλμένα μηνύματά σας",
-							language_choice_output_received:	"Γλώσσα εξόδου στα ληφθέντα μηνύματα",
-							language_choice_output_sent:		"Γλώσσα εξόδου στα απεσταλμένα μηνύματά σας",
+							language_choice_input_sent:			"Γλώσσα εισαγωγής στα απεσταλμένα μηνύματά σας",
+							language_choice_output_received:	"Γλώσσα εξαγωγής στα ληφθέντα μηνύματα",
+							language_choice_output_sent:		"Γλώσσα εξαγωγής στα απεσταλμένα μηνύματά σας",
 							language_selection_channel:			"Η επιλογή γλώσσας θα αλλάξει ειδικά για αυτό το κανάλι",
 							language_selection_global:			"Η Επιλογή Γλώσσας θα αλλάξει για όλους τους Διακομιστές",
 							language_selection_server:			"Η επιλογή γλώσσας θα αλλάξει ειδικά για αυτόν τον διακομιστή",
-							popout_translateoption:				"Μεταφράζω",
-							popout_untranslateoption:			"Μη μετάφραση",
+							popout_translateoption:				"Μετάφραση",
+							popout_untranslateoption:			"Αναίρεση μετάφρασης",
 							toast_translating:					"Μετάφραση",
 							toast_translating_failed:			"Αποτυχία μετάφρασης",
 							toast_translating_tryanother:		"Δοκιμάστε έναν άλλο Μεταφραστή",
-							translate_your_message:				"Μεταφράστε τα Μηνύματά σας πριν τα στείλετε",
+							translate_your_message:				"Μεταφράστε τα Μηνύματά σας πριν την αποστολή",
 							translated_watermark:				"μεταφρασμένο",
 							translator_engine:					"Μεταφράστης"
 						};

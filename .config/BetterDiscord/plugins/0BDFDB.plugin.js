@@ -2,7 +2,7 @@
  * @name BDFDB
  * @author DevilBro
  * @authorId 278543574059057154
- * @version 3.2.2
+ * @version 3.3.3
  * @description Required Library for DevilBro's Plugins
  * @invite Jx3TjNS
  * @donate https://www.paypal.me/MircoWittrien
@@ -393,6 +393,13 @@ module.exports = (_ => {
 			};
 			BDFDB.ObjectUtils.isEmpty = function (obj) {
 				return !BDFDB.ObjectUtils.is(obj) || Object.getOwnPropertyNames(obj).length == 0;
+			};
+			BDFDB.ObjectUtils.copy = function (obj) {
+				if (!BDFDB.ObjectUtils.is(obj)) return obj;
+				let copy = {};
+				for (let key in obj) copy[key] = obj[key];
+				for (let key of Reflect.ownKeys(obj.constructor.prototype)) if (!copy[key] && obj[key] !== undefined) copy[key] = obj[key];
+				return copy;
 			};
 
 			BDFDB.ArrayUtils = {};
@@ -798,7 +805,7 @@ module.exports = (_ => {
 					}
 					else {
 						let wasEnabled = BDFDB.BDUtils.isPluginEnabled(pluginName);
-						let newName = (body.match(/"name"\s*:\s*"([^"]+)"/) || [])[1] || pluginName;
+						let newName = (body.match(/@name ([^"^\n^\t^\t]+)|['"]([^"^\n^\t^\t]+)['"]/i) || []).filter(n => n)[1] || pluginName;
 						let newVersion = (body.match(/@version ([0-9]+\.[0-9]+\.[0-9]+)|['"]([0-9]+\.[0-9]+\.[0-9]+)['"]/i) || []).filter(n => n)[1];
 						let oldVersion = PluginStores.updateData.plugins[url].version;
 						let fileName = pluginName == "BDFDB" ? "0BDFDB" : pluginName;
@@ -1280,6 +1287,16 @@ module.exports = (_ => {
 								else return defaultExport ? r : req.c[i];
 							}
 							else for (let key of Object.keys(m)) if (key.length < 4 && m[key] && !!(r = filter(m[key]))) {
+								if (all) found.push(defaultExport ? r : req.c[i]);
+								else return defaultExport ? r : req.c[i];
+							}
+						}
+						if (config.moduleName && m && m[config.moduleName] && (typeof m[config.moduleName] == "object" || typeof m[config.moduleName] == "function")) {
+							if (!!(r = filter(m[config.moduleName]))) {
+								if (all) found.push(defaultExport ? r : req.c[i]);
+								else return defaultExport ? r : req.c[i];
+							}
+							else if (m[config.moduleName].type && (typeof m[config.moduleName].type == "object" || typeof m[config.moduleName].type == "function") && !!(r = filter(m[config.moduleName].type))) {
 								if (all) found.push(defaultExport ? r : req.c[i]);
 								else return defaultExport ? r : req.c[i];
 							}
@@ -2149,7 +2166,7 @@ module.exports = (_ => {
 							if (InternalData.PatchModules[type]) {
 								let found = false;
 								if (!InternalData.PatchModules[type].noSearch && (patchType == "before" || patchType == "after")) {
-									let exports = (BDFDB.ModuleUtils.find(m => Internal.isCorrectModule(m, type) && m, {defaultExport: false}) || {}).exports;
+									let exports = (BDFDB.ModuleUtils.find(m => Internal.isCorrectModule(m, type) && m, {defaultExport: false, moduleName: type}) || {}).exports;
 									if (exports && !exports.default) for (let key of Object.keys(exports)) if (typeof exports[key] == "function" && !(exports[key].prototype && exports[key].prototype.render) && Internal.isCorrectModule(exports[key], type, false) && exports[key].toString().length < 50000) {
 										found = true;
 										BDFDB.PatchUtils.patch(plugin, exports, key, {[patchType]: e => Internal.initiatePatch(plugin, type, {
@@ -2404,49 +2421,48 @@ module.exports = (_ => {
 					return false;
 				};
 				Internal.findModuleViaData = (moduleStorage, dataStorage, item) => {
-					if (dataStorage[item]) {
-						let defaultExport = typeof dataStorage[item].exported != "boolean" ? true : dataStorage[item].exported;
-						if (dataStorage[item].props) moduleStorage[item] = BDFDB.ModuleUtils.findByProperties(dataStorage[item].props, {defaultExport});
-						else if (dataStorage[item].protos) moduleStorage[item] = BDFDB.ModuleUtils.findByPrototypes(dataStorage[item].protos, {defaultExport});
-						else if (dataStorage[item].name) moduleStorage[item] = BDFDB.ModuleUtils.findByName(dataStorage[item].name, {defaultExport});
-						else if (dataStorage[item].strings) {
-							if (dataStorage[item].nonStrings) {
-								moduleStorage[item] = Internal.findModule("strings + nonStrings", JSON.stringify([dataStorage[item].strings, dataStorage[item].nonStrings].flat(10)), m => Internal.checkModuleStrings(m, dataStorage[item].strings) && Internal.checkModuleStrings(m, dataStorage[item].nonStrings, {hasNot: true}) && m, {defaultExport});
-							}
-							else moduleStorage[item] = BDFDB.ModuleUtils.findByString(dataStorage[item].strings, {defaultExport});
+					if (!dataStorage[item]) return;
+					let defaultExport = typeof dataStorage[item].exported != "boolean" ? true : dataStorage[item].exported;
+					if (dataStorage[item].props) moduleStorage[item] = BDFDB.ModuleUtils.findByProperties(dataStorage[item].props, {defaultExport: defaultExport, moduleName: item});
+					else if (dataStorage[item].protos) moduleStorage[item] = BDFDB.ModuleUtils.findByPrototypes(dataStorage[item].protos, {defaultExport: defaultExport, moduleName: item});
+					else if (dataStorage[item].name) moduleStorage[item] = BDFDB.ModuleUtils.findByName(dataStorage[item].name, {defaultExport: defaultExport, moduleName: item});
+					else if (dataStorage[item].strings) {
+						if (dataStorage[item].nonStrings) {
+							moduleStorage[item] = Internal.findModule("strings + nonStrings", JSON.stringify([dataStorage[item].strings, dataStorage[item].nonStrings].flat(10)), m => Internal.checkModuleStrings(m, dataStorage[item].strings) && Internal.checkModuleStrings(m, dataStorage[item].nonStrings, {hasNot: true}) && m, {defaultExport: defaultExport, moduleName: item});
 						}
-						if (dataStorage[item].value) moduleStorage[item] = (moduleStorage[item] || {})[dataStorage[item].value];
-						if (dataStorage[item].assign) moduleStorage[item] = Object.assign({}, moduleStorage[item]);
-						if (moduleStorage[item]) {
-							if (dataStorage[item].funcStrings) moduleStorage[item] = (Object.entries(moduleStorage[item]).find(n => {
-								if (!n || !n[1]) return;
-								let funcString = typeof n[1] == "function" ? n[1].toString() : (_ => {try {return JSON.stringify(n[1])}catch(err){return n[1].toString()}})();
-								let renderFuncString = typeof n[1].render == "function" && n[1].render.toString() || "";
-								return [dataStorage[item].funcStrings].flat(10).filter(s => s && typeof s == "string").every(string => funcString.indexOf(string) > -1 || renderFuncString.indexOf(string) > -1);
-							}) || [])[1];
-							if (dataStorage[item].map) {
-								dataStorage[item]._originalModule = moduleStorage[item];
-								dataStorage[item]._mappedItems = {};
-								moduleStorage[item] = new Proxy(Object.assign({}, dataStorage[item]._originalModule, dataStorage[item].map), {
-									get: function (_, item2) {
-										if (dataStorage[item]._originalModule[item2]) return dataStorage[item]._originalModule[item2];
-										if (dataStorage[item]._mappedItems[item2]) return dataStorage[item]._originalModule[dataStorage[item]._mappedItems[item2]];
-										if (!dataStorage[item].map[item2]) return dataStorage[item]._originalModule[item2];
-										let foundFunc = Object.entries(dataStorage[item]._originalModule).find(n => {
-											if (!n || !n[1]) return;
-											let funcString = typeof n[1] == "function" ? n[1].toString() : (_ => {try {return JSON.stringify(n[1])}catch(err){return n[1].toString()}})();
-											let renderFuncString = typeof n[1].render == "function" && n[1].render.toString() || "";
-											return [dataStorage[item].map[item2]].flat(10).filter(s => s && typeof s == "string").every(string => funcString.indexOf(string) > -1 || renderFuncString.indexOf(string) > -1);
-										});
-										if (foundFunc) {
-											dataStorage[item]._mappedItems[item2] = foundFunc[0];
-											return foundFunc[1];
-										}
-										return "div";
-									}
+						else moduleStorage[item] = BDFDB.ModuleUtils.findByString(dataStorage[item].strings, {defaultExport: defaultExport, moduleName: item});
+					}
+					if (dataStorage[item].value) moduleStorage[item] = (moduleStorage[item] || {})[dataStorage[item].value];
+					if (dataStorage[item].assign) moduleStorage[item] = Object.assign({}, moduleStorage[item]);
+					if (!moduleStorage[item]) return;
+					if (moduleStorage[item][item]) moduleStorage[item] = moduleStorage[item][item];
+					if (dataStorage[item].funcStrings) moduleStorage[item] = (Object.entries(moduleStorage[item]).find(n => {
+						if (!n || !n[1]) return;
+						let funcString = typeof n[1] == "function" ? n[1].toString() : (_ => {try {return JSON.stringify(n[1])}catch(err){return n[1].toString()}})();
+						let renderFuncString = typeof n[1].render == "function" && n[1].render.toString() || "";
+						return (funcString || renderFuncString) && [dataStorage[item].funcStrings].flat(10).filter(s => s && typeof s == "string").every(string => funcString && funcString.indexOf(string) > -1 || renderFuncString && renderFuncString.indexOf(string) > -1);
+					}) || [])[1];
+					if (dataStorage[item].map) {
+						dataStorage[item]._originalModule = moduleStorage[item];
+						dataStorage[item]._mappedItems = {};
+						moduleStorage[item] = new Proxy(Object.assign({}, dataStorage[item]._originalModule, dataStorage[item].map), {
+							get: function (_, item2) {
+								if (dataStorage[item]._originalModule[item2]) return dataStorage[item]._originalModule[item2];
+								if (dataStorage[item]._mappedItems[item2]) return dataStorage[item]._originalModule[dataStorage[item]._mappedItems[item2]];
+								if (!dataStorage[item].map[item2]) return dataStorage[item]._originalModule[item2];
+								let foundFunc = Object.entries(dataStorage[item]._originalModule).find(n => {
+									if (!n || !n[1]) return;
+									let funcString = typeof n[1] == "function" ? n[1].toString() : (_ => {try {return JSON.stringify(n[1])}catch(err){return n[1].toString()}})();
+									let renderFuncString = typeof n[1].render == "function" && n[1].render.toString() || "";
+									return [dataStorage[item].map[item2]].flat(10).filter(s => s && typeof s == "string").every(string => funcString && funcString.replace(/[\n\t\r]/g, "").indexOf(string) > -1 || renderFuncString && renderFuncString.replace(/[\n\t\r]/g, "").indexOf(string) > -1);
 								});
+								if (foundFunc) {
+									dataStorage[item]._mappedItems[item2] = foundFunc[0];
+									return foundFunc[1];
+								}
+								return "div";
 							}
-						}
+						});
 					}
 				};
 				
@@ -2828,6 +2844,7 @@ module.exports = (_ => {
 						return: config.up ? true : false,
 						sibling: config.up ? false : true
 					};
+					let whitelistKeys = Object.keys(whitelist);
 					let blacklist = {
 						contextSection: true
 					};
@@ -2839,7 +2856,7 @@ module.exports = (_ => {
 						depth++;
 						let result = undefined;
 						if (instance && !Node.prototype.isPrototypeOf(instance) && !BDFDB.ReactUtils.getInstance(instance) && depth < maxDepth && performance.now() - start < maxTime) {
-							let keys = Object.keys(instance);
+							let keys = Object.keys(instance).sort((x, y) => whitelistKeys.indexOf(x) < whitelistKeys.indexOf(y) ? -1 : 1);
 							for (let i = 0; result === undefined && i < keys.length; i++) {
 								let key = keys[i];
 								if (key && !blacklist[key]) {
@@ -3026,7 +3043,7 @@ module.exports = (_ => {
 					return Internal.LibraryModules.IconUtils.getGuildBannerURL(guild).split("?")[0];
 				};
 				BDFDB.GuildUtils.getFolder = function (id) {
-					return Internal.LibraryModules.SortedGuildUtils.guildFolders.filter(n => n.folderId).find(n => n.guildIds.includes(id));
+					return Internal.LibraryStores.SortedGuildStore.getGuildFolders().filter(n => n.folderId).find(n => n.guildIds.includes(id));
 				};
 				BDFDB.GuildUtils.openMenu = function (guild, e = mousePosition) {
 					if (!guild) return;
@@ -3061,7 +3078,7 @@ module.exports = (_ => {
 					return BDFDB.ReactUtils.findValue(div, "folderId", {up: true});
 				};
 				BDFDB.FolderUtils.getDefaultName = function (folderId) {
-					let folder = Internal.LibraryModules.SortedGuildUtils.getGuildFolderById(folderId);
+					let folder = Internal.LibraryStores.SortedGuildStore.getGuildFolderById(folderId);
 					if (!folder) return "";
 					let rest = 2 * Internal.DiscordConstants.MAX_GUILD_FOLDER_NAME_LENGTH;
 					let names = [], allNames = folder.guildIds.map(guildId => (Internal.LibraryStores.GuildStore.getGuild(guildId) || {}).name).filter(n => n);
@@ -3105,14 +3122,23 @@ module.exports = (_ => {
 				BDFDB.ChannelUtils.rerenderAll = function (instant) {
 					BDFDB.TimeUtils.clear(BDFDB.ChannelUtils.rerenderAll.timeout);
 					BDFDB.ChannelUtils.rerenderAll.timeout = BDFDB.TimeUtils.timeout(_ => {
-						let ChannelsIns = BDFDB.ReactUtils.findOwner(document.querySelector(BDFDB.dotCN.guildchannels), {name: "Channels", unlimited: true});
-						let ChannelsPrototype = BDFDB.ObjectUtils.get(ChannelsIns, `${BDFDB.ReactUtils.instanceKey}.type.prototype`);
-						if (ChannelsIns && ChannelsPrototype) {
-							BDFDB.PatchUtils.patch({name: "BDFDB ChannelUtils"}, ChannelsPrototype, "render", {after: e => {
-								e.returnValue.props.children = typeof e.returnValue.props.children == "function" ? (_ => {return null;}) : [];
-								BDFDB.ReactUtils.forceUpdate(ChannelsIns);
-							}}, {once: true});
-							BDFDB.ReactUtils.forceUpdate(ChannelsIns);
+						let ChannelsIns = BDFDB.ReactUtils.findOwner(document.querySelector(BDFDB.dotCN.guildchannels), {name: "ChannelsList", unlimited: true});
+						if (!ChannelsIns) return;
+						else {
+							if (ChannelsIns && ChannelsIns.props && ChannelsIns.props.guildChannels.categories && Object.keys(ChannelsIns.props.guildChannels.categories).length) {
+								let category = ChannelsIns.props.guildChannels.categories[Object.keys(ChannelsIns.props.guildChannels.categories)[0]];
+								category.isCollapsed ? BDFDB.LibraryModules.CategoryCollapseUtils.collapse(category.id) : BDFDB.LibraryModules.CategoryCollapseUtils.expand(category.id);
+							}
+							else {
+								let ChannelsPrototype = BDFDB.ObjectUtils.get(ChannelsIns, `${BDFDB.ReactUtils.instanceKey}.type.prototype`);
+								if (ChannelsIns && ChannelsPrototype) {
+									BDFDB.PatchUtils.patch({name: "BDFDB ChannelUtils"}, ChannelsPrototype, "render", {after: e => {
+										e.returnValue.props.children = typeof e.returnValue.props.children == "function" ? (_ => {return null;}) : [];
+										BDFDB.ReactUtils.forceUpdate(ChannelsIns);
+									}}, {once: true});
+									BDFDB.ReactUtils.forceUpdate(ChannelsIns);
+								}
+							}
 						}
 					}, instant ? 0 : 1000);
 				};
@@ -3143,7 +3169,7 @@ module.exports = (_ => {
 					else {
 						if (typeof color == "string") color = color.replace(/calc\(.+\s*\*\s*([0-9\.\%]+)\)/g, "$1");
 						conv = conv === undefined || !conv ? conv = "RGBCOMP" : conv.toUpperCase();
-						type = type === undefined || !type || !["RGB", "RGBA", "RGBCOMP", "HSL", "HSLA", "HSLCOMP", "HEX", "HEXA", "INT"].includes(type.toUpperCase()) ? BDFDB.ColorUtils.getType(color) : type.toUpperCase();
+						type = type === undefined || !type || !["RGB", "RGBA", "RGBCOMP", "HSL", "HSLA", "HSLCOMP", "HSV", "HSVA", "HSVCOMP", "HEX", "HEXA", "INT"].includes(type.toUpperCase()) ? BDFDB.ColorUtils.getType(color) : type.toUpperCase();
 						if (conv == "RGBCOMP") {
 							switch (type) {
 								case "RGBCOMP":
@@ -3162,14 +3188,14 @@ module.exports = (_ => {
 									return processRGB(rgbComp).concat(a);
 								case "HSLCOMP":
 									var hslComp = [].concat(color);
-									if (hslComp.length == 3) return BDFDB.ColorUtils.convert(`hsl(${processHSL(hslComp).join(",")})`, "RGBCOMP");
+									if (hslComp.length == 3) return BDFDB.ColorUtils.convert(`hsl(${processHSX(hslComp).join(",")})`, "RGBCOMP");
 									else if (hslComp.length == 4) {
 										let a = processA(hslComp.pop());
-										return BDFDB.ColorUtils.convert(`hsl(${processHSL(hslComp).join(",")})`, "RGBCOMP").concat(a);
+										return BDFDB.ColorUtils.convert(`hsl(${processHSX(hslComp).join(",")})`, "RGBCOMP").concat(a);
 									}
 									break;
 								case "HSL":
-									var hslComp = processHSL(color.replace(/\s/g, "").slice(4, -1).split(","));
+									var hslComp = processHSX(color.replace(/\s/g, "").slice(4, -1).split(","));
 									var r, g, b, m, c, x, p, q;
 									var h = hslComp[0], s = processPercentage(hslComp[1]), l = processPercentage(hslComp[2]);
 									var a = s * Math.min(l, 1-l);
@@ -3178,6 +3204,32 @@ module.exports = (_ => {
 								case "HSLA":
 									var hslComp = color.replace(/\s/g, "").slice(5, -1).split(",");
 									return BDFDB.ColorUtils.convert(`hsl(${hslComp.slice(0, 3).join(",")})`, "RGBCOMP").concat(processA(hslComp.pop()));
+								case "HSVCOMP":
+									var hsvComp = [].concat(color);
+									if (hsvComp.length == 3) return BDFDB.ColorUtils.convert(`hsv(${processHSX(hsvComp).join(",")})`, "RGBCOMP");
+									else if (hsvComp.length == 4) {
+										let a = processA(hsvComp.pop());
+										return BDFDB.ColorUtils.convert(`hsv(${processHSX(hsvComp).join(",")})`, "RGBCOMP").concat(a);
+									}
+									break;
+								case "HSV":
+									var hsvComp = processHSX(color.replace(/\s/g, "").slice(4, -1).split(","));
+									var r, g, b, i, f, p, q, t;
+									var h = hsvComp[0] / 360, s = processPercentage(hsvComp[1]), v = processPercentage(hsvComp[2]);
+									i = Math.floor(h * 6), f = h * 6 - i, p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+
+									switch (i % 6) {
+										case 0: r = v, g = t, b = p; break;
+										case 1: r = q, g = v, b = p; break;
+										case 2: r = p, g = v, b = t; break;
+										case 3: r = p, g = q, b = v; break;
+										case 4: r = t, g = p, b = v; break;
+										case 5: r = v, g = p, b = q; break;
+									}
+									return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+								case "HSVA":
+									var hsvComp = color.replace(/\s/g, "").slice(5, -1).split(",");
+									return BDFDB.ColorUtils.convert(`hsv(${hsvComp.slice(0, 3).join(",")})`, "RGBCOMP").concat(processA(hsvComp.pop()));
 								case "HEX":
 									var hex = /^#([a-f\d]{1})([a-f\d]{1})([a-f\d]{1})$|^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
 									return [parseInt(hex[1] + hex[1] || hex[4], 16), parseInt(hex[2] + hex[2] || hex[5], 16), parseInt(hex[3] + hex[3] || hex[6], 16)];
@@ -3192,26 +3244,27 @@ module.exports = (_ => {
 							}
 						}
 						else {
-							if (conv && type && conv.indexOf("HSL") == 0 && type.indexOf("HSL") == 0) {
-								if (type == "HSLCOMP") {
-									let hslComp = [].concat(color);
+							if (conv && type && (conv.indexOf("HSL") == 0 && type.indexOf("HSL") == 0 || conv.indexOf("HSV") == 0 && type.indexOf("HSV") == 0)) {
+								let name = type.indexOf("HSL") == 0 ? "HSL" : "HSV";
+								if (type == `${name}COMP`) {
+									let comp = [].concat(color);
 									switch (conv) {
-										case "HSLCOMP":
-											if (hslComp.length == 3) return processHSL(hslComp);
-											else if (hslComp.length == 4) {
-												var a = processA(hslComp.pop());
-												return processHSL(hslComp).concat(a);
+										case `${name}COMP`:
+											if (comp.length == 3) return processHSX(comp);
+											else if (comp.length == 4) {
+												var a = processA(comp.pop());
+												return processHSX(comp).concat(a);
 											}
 											break;
-										case "HSL":
-											return `hsl(${processHSL(hslComp.slice(0, 3)).join(",")})`;
-										case "HSLA":
-											hslComp = hslComp.slice(0, 4);
-											var a = hslComp.length == 4 ? processA(hslComp.pop()) : 1;
-											return `hsla(${processHSL(hslComp).concat(a).join(",")})`;
+										case name:
+											return `${name.toLowerCase()}(${processHSX(comp.slice(0, 3)).join(",")})`;
+										case `${name}A`:
+											comp = comp.slice(0, 4);
+											var a = comp.length == 4 ? processA(comp.pop()) : 1;
+											return `${name.toLowerCase()}a(${processHSX(comp).concat(a).join(",")})`;
 									}
 								}
-								return BDFDB.ColorUtils.convert(color.replace(/\s/g, "").slice(color.toUpperCase().indexOf("HSLA") == 0 ? 5 : 4, -1).split(","), conv, "HSLCOMP");
+								return BDFDB.ColorUtils.convert(color.replace(/\s/g, "").slice(color.toUpperCase().indexOf("A") == 3 ? 5 : 4, -1).split(","), conv, `${name}COMP`);
 							}
 							else {
 								let rgbComp = type == "RGBCOMP" ? [].concat(color) : BDFDB.ColorUtils.convert(color, "RGBCOMP", type);
@@ -3224,21 +3277,45 @@ module.exports = (_ => {
 										return `rgba(${processRGB(rgbComp).concat(a).join(",")})`;
 									case "HSLCOMP":
 										var a = rgbComp.length == 4 ? processA(rgbComp.pop()) : null;
-										var hslComp = processHSL(BDFDB.ColorUtils.convert(rgbComp, "HSL").replace(/\s/g, "").split(","));
+										var hslComp = processHSX(BDFDB.ColorUtils.convert(rgbComp, "HSL").replace(/\s/g, "").split(","));
 										return a != null ? hslComp.concat(a) : hslComp;
 									case "HSL":
+										var r = processC(rgbComp[0]) / 255, g = processC(rgbComp[1]) / 255, b = processC(rgbComp[2]) / 255;
+										var max = Math.max(r, g, b), min = Math.min(r, g, b);
+
+										var h, s, l;
+										h = s = l = (max + min) / 2;
+
+										if (max === min) return `hsl(${processHSX([0, 0, l * 100]).join(",")})`;
+
+										var dif = max - min;
+										s = l >= 0.5 ? dif / (2 - (max + min)) : dif / (max + min);
+										switch (max) {
+											case r: h = ((g - b) / dif + 0) * 60; break;
+											case g: h = ((b - r) / dif + 2) * 60; break;
+											case b: h = ((r - g) / dif + 4) * 60; break;
+										}
+										return `hsl(${processHSX([Math.round(h * 360), s * 100, l * 100]).join(",")})`;
+									case "HSLA":
+										var a = rgbComp.length == 4 ? processA(rgbComp.pop()) : 1;
+										return `hsla(${BDFDB.ColorUtils.convert(rgbComp, "HSL").slice(4, -1).split(",").concat(a).join(",")})`;
+									case "HSVCOMP":
+										var a = rgbComp.length == 4 ? processA(rgbComp.pop()) : null;
+										var hsvComp = processHSX(BDFDB.ColorUtils.convert(rgbComp, "HSV").replace(/\s/g, "").split(","));
+										return a != null ? hsvComp.concat(a) : hsvComp;
+									case "HSV":
 										var r = processC(rgbComp[0]), g = processC(rgbComp[1]), b = processC(rgbComp[2]);
-										var max = Math.max(r, g, b), min = Math.min(r, g, b), dif = max - min, h, l = max === 0 ? 0 : dif / max, s = max / 255;
+										var max = Math.max(r, g, b), min = Math.min(r, g, b), dif = max - min, h, s = max === 0 ? 0 : dif / max, v = max / 255;
 										switch (max) {
 											case min: h = 0; break;
 											case r: h = g - b + dif * (g < b ? 6 : 0); h /= 6 * dif; break;
 											case g: h = b - r + dif * 2; h /= 6 * dif; break;
 											case b: h = r - g + dif * 4; h /= 6 * dif; break;
 										}
-										return `hsl(${processHSL([Math.round(h * 360), l * 100, s * 100]).join(",")})`;
-									case "HSLA":
+										return `hsv(${processHSX([Math.round(h * 360), s * 100, v * 100]).join(",")})`;
+									case "HSVA":
 										var a = rgbComp.length == 4 ? processA(rgbComp.pop()) : 1;
-										return `hsla(${BDFDB.ColorUtils.convert(rgbComp, "HSL").slice(4, -1).split(",").concat(a).join(",")})`;
+										return `hsva(${BDFDB.ColorUtils.convert(rgbComp, "HSV").slice(4, -1).split(",").concat(a).join(",")})`;
 									case "HEX":
 										return ("#" + (0x1000000 + (rgbComp[2] | rgbComp[1] << 8 | rgbComp[0] << 16)).toString(16).slice(1)).toUpperCase();
 									case "HEXA":
@@ -3281,7 +3358,7 @@ module.exports = (_ => {
 							return (isNaN(sl) || sl > 100 ? 100 : sl < 0 ? 0 : sl) + "%";
 						}
 					};
-					function processHSL (comp) {
+					function processHSX (comp) {
 						comp = [].concat(comp);
 						let h = parseFloat(comp.shift().toString().replace(/[^0-9\.\-]/g, ""));
 						h = isNaN(h) || h > 360 ? 360 : h < 0 ? 0 : h;
@@ -3400,6 +3477,8 @@ module.exports = (_ => {
 								else if (color.indexOf("RGBA(") == 0 && comp.length == 4 && isRGB(comp)) return "RGBA";
 								else if (color.indexOf("HSL(") == 0 && comp.length == 3 && isHSL(comp)) return "HSL";
 								else if (color.indexOf("HSLA(") == 0 && comp.length == 4 && isHSL(comp)) return "HSLA";
+								else if (color.indexOf("HSV(") == 0 && comp.length == 3 && isHSL(comp)) return "HSV";
+								else if (color.indexOf("HSVA(") == 0 && comp.length == 4 && isHSL(comp)) return "HSVA";
 							}
 						}
 						else if (typeof color === "number" && parseInt(color) == color && color > -1 && color < 16777216) return "INT";
@@ -3941,7 +4020,7 @@ module.exports = (_ => {
 						if (!child) return false;
 						let props = child.stateNode ? child.stateNode.props : child.props;
 						if (!props) return false;
-						return config.id && config.id.some(key => props.id == key) || config.label && config.label.some(key => props.label == key);
+						return config.id && config.id.some(key => key == "devmode-copy-id" ? typeof props.id == "string" && props.id.startsWith(key) : props.id == key) || config.label && config.label.some(key => props.label == key);
 					}
 				};
 
@@ -4099,12 +4178,144 @@ module.exports = (_ => {
 				};
 				
 				BDFDB.DiscordUtils = {};
+				var getFileData = (...args) => {
+					var p = function (e, t, n, r, i, o, a) {
+						try {
+							var s = e[o](a),
+							u = s.value;
+						} catch (e) {
+							n(e);
+							return;
+						}
+						s.done ? t(u) : Promise.resolve(u).then(r, i);
+					};
+					var E = function (e) {
+						return function () {
+							var t = this,
+							n = arguments;
+							return new Promise((function (r, i) {
+								var o = e.apply(t, n);
+								function a(e) {
+									p(o, r, i, a, s, "next", e);
+								}
+								function s(e) {
+									p(o, r, i, a, s, "throw", e);
+								}
+								a(void 0);
+							}));
+						};
+					};
+					return E(function (e) {
+						const v = function (e, t) {		
+							var s = function (o) {
+								return function (s) {
+									return function (o) {
+										if (n) throw new TypeError("Generator is already executing.");
+										for (; a; ) try {
+											if (n = 1, r && (i = 2 & o[0] ? r.return : o[0] ? r.throw || ((i = r.return) && i.call(r), 0) : r.next) && !(i = i.call(r, o[1])).done) return i;
+											(r = 0, i) && (o = [2 & o[0], i.value]);
+											switch (o[0]) {
+												case 0:
+												case 1:
+													i = o;
+													break;
+												case 4:
+													a.label++;
+													return {
+														value: o[1],
+														done: !1
+													};
+												case 5:
+													a.label++;
+													r = o[1];
+													o = [0];
+													continue;
+												case 7:
+													o = a.ops.pop();
+													a.trys.pop();
+													continue;
+												default:
+													if (!(i = a.trys, i = i.length > 0 && i[i.length - 1]) && (6 === o[0] || 2 === o[0])) {
+														a = 0;
+														continue;
+													}
+													if (3 === o[0] && (!i || o[1] > i[0] && o[1] < i[3])) {
+														a.label = o[1];
+														break;
+													}
+													if (6 === o[0] && a.label < i[1]) {
+														a.label = i[1];
+														i = o;
+														break;
+													}
+													if (i && a.label < i[2]) {
+														a.label = i[2];
+														a.ops.push(o);
+														break;
+													}
+													i[2] && a.ops.pop();
+													a.trys.pop();
+													continue;
+											}
+											o = t.call(e, a);
+										} catch (e) {
+											o = [6, e];
+											r = 0;
+										} finally {
+											n = i = 0;
+										}
+										if (5 & o[0]) throw o[1];
+										return {
+											value: o[0] ? o[1] : void 0,
+											done: !0
+										}
+									}([o, s])
+								}
+							}
+							
+							var n, r, i, o;
+							var a = {
+								label: 0,
+								sent: function () {
+									if (1 & i[0])
+										throw i[1];
+									return i[1]
+								},
+								trys: [],
+								ops: []
+							};
+							return o = {
+								next: s(0),
+								throw : s(1),
+								return : s(2)
+							}, "function" == typeof Symbol && (o[Symbol.iterator] = function () {
+								return this
+							}), o;
+						};
+						return v(this, (function (r) {
+							var t, n;
+							switch (r.label) {
+							case 0:
+								return [4, fetch(new Request(e, {
+									method: "GET",
+									mode: "cors"
+								}))];
+							case 1:
+								t = r.sent();
+								return [4, t.arrayBuffer()];
+							case 2:
+								n = r.sent();
+								return [2, n]
+							}
+						}));
+					}).apply(this, args);
+				};
 				BDFDB.DiscordUtils.requestFileData = function (...args) {
 					let {url, uIndex} = args[0] && typeof args[0] == "string" ? {url: args[0], uIndex: 0} : (args[1] && typeof args[1] == "object" && typeof args[1].url == "string" ? {url: args[1], uIndex: 1} : {url: null, uIndex: -1});
 					if (!url || typeof url != "string") return;
 					let {callback, cIndex} = args[1] && typeof args[1] == "function" ? {callback: args[1], cIndex: 1} : (args[2] && typeof args[2] == "function" ? {callback: args[2], cIndex: 2} : {callback: null, cIndex: -1});
 					if (typeof callback != "function") return;
-					Internal.LibraryModules.FileRequestUtils.getFileData(url).then(buffer => callback(null, buffer)).catch(error => callback(error, null));
+					getFileData(url).then(buffer => callback(null, buffer)).catch(error => callback(error, null));
 				};
 				BDFDB.DiscordUtils.getSetting = function (category, key) {
 					if (!category || !key) return;
@@ -5096,13 +5307,13 @@ module.exports = (_ => {
 					render() {
 						if (this.state.isGradient) this.props.color = Object.assign({}, this.props.color);
 						
-						let hslFormat = this.props.alpha ? "HSLA" : "HSL";
+						let colorFormat = this.props.alpha ? "HSVA" : "HSV";
 						let hexRegex = this.props.alpha ? /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i : /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
 						
-						let selectedColor = BDFDB.ColorUtils.convert(this.state.isGradient ? this.props.color[this.state.selectedGradientCursor] : this.props.color, hslFormat) || BDFDB.ColorUtils.convert("#000000FF", hslFormat);
-						let currentGradient = (this.state.isGradient ? Object.entries(this.props.color, hslFormat) : [[0, selectedColor], [1, selectedColor]]);
+						let selectedColor = BDFDB.ColorUtils.convert(this.state.isGradient ? this.props.color[this.state.selectedGradientCursor] : this.props.color, colorFormat) || BDFDB.ColorUtils.convert("#000000FF", colorFormat);
+						let currentGradient = (this.state.isGradient ? Object.entries(this.props.color, colorFormat) : [[0, selectedColor], [1, selectedColor]]);
 						
-						let [h, s, l] = BDFDB.ColorUtils.convert(selectedColor, "HSLCOMP");
+						let [h, s, v] = BDFDB.ColorUtils.convert(selectedColor, "HSVCOMP");
 						let a = BDFDB.ColorUtils.getAlpha(selectedColor);
 						a = a == null ? 1 : a;
 						
@@ -5119,10 +5330,10 @@ module.exports = (_ => {
 											className: BDFDB.disCN.colorpickersaturation,
 											children: BDFDB.ReactUtils.createElement("div", {
 												className: BDFDB.disCN.colorpickersaturationcolor,
-												style: {position: "absolute", top: 0, right: 0, bottom: 0, left: 0, cursor: "crosshair", backgroundColor: BDFDB.ColorUtils.convert([h, "100%", "100%"], "RGB")},
+												style: {position: "absolute", top: 0, right: 0, bottom: 0, left: 0, cursor: "crosshair", backgroundColor: BDFDB.ColorUtils.convert([h, "100%", "50%"], "RGB")},
 												onClick: event => {
 													let rects = BDFDB.DOMUtils.getRects(BDFDB.DOMUtils.getParent(BDFDB.dotCN.colorpickersaturationcolor, event.target));
-													this.handleColorChange(BDFDB.ColorUtils.convert([h, BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 100], event.clientX) + "%", BDFDB.NumberUtils.mapRange([rects.top, rects.top + rects.height], [100, 0], event.clientY) + "%", a], hslFormat));
+													this.handleColorChange(BDFDB.ColorUtils.convert([h, BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 100], event.clientX) + "%", BDFDB.NumberUtils.mapRange([rects.top, rects.top + rects.height], [100, 0], event.clientY) + "%", a], colorFormat, "HSVCOMP"));
 												},
 												onMouseDown: event => {
 													let rects = BDFDB.DOMUtils.getRects(BDFDB.DOMUtils.getParent(BDFDB.dotCN.colorpickersaturationcolor, event.target));
@@ -5131,7 +5342,7 @@ module.exports = (_ => {
 														document.removeEventListener("mousemove", mouseMove);
 													};
 													let mouseMove = event2 => {
-														this.handleColorChange(BDFDB.ColorUtils.convert([h, BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 100], event2.clientX) + "%", BDFDB.NumberUtils.mapRange([rects.top, rects.top + rects.height], [100, 0], event2.clientY) + "%", a], hslFormat));
+														this.handleColorChange(BDFDB.ColorUtils.convert([h, BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 100], event2.clientX) + "%", BDFDB.NumberUtils.mapRange([rects.top, rects.top + rects.height], [100, 0], event2.clientY) + "%", a], colorFormat, "HSVCOMP"));
 													};
 													document.addEventListener("mouseup", mouseUp);
 													document.addEventListener("mousemove", mouseMove);
@@ -5150,7 +5361,7 @@ module.exports = (_ => {
 															}),
 															BDFDB.ReactUtils.createElement("div", {
 																className: BDFDB.disCN.colorpickersaturationcursor,
-																style: {position: "absolute", cursor: "crosshair", left: s, top: `${BDFDB.NumberUtils.mapRange([0, 100], [100, 0], parseFloat(l))}%`},
+																style: {position: "absolute", cursor: "crosshair", left: s, top: `${BDFDB.NumberUtils.mapRange([0, 100], [100, 0], parseFloat(v))}%`},
 																children: BDFDB.ReactUtils.createElement("div", {
 																	style: {width: 4, height: 4, boxShadow: "rgb(255, 255, 255) 0px 0px 0px 1.5px, rgba(0, 0, 0, 0.3) 0px 0px 1px 1px inset, rgba(0, 0, 0, 0.4) 0px 0px 1px 2px", borderRadius: "50%", transform: "translate(-2px, -2px)"}
 																})
@@ -5169,7 +5380,7 @@ module.exports = (_ => {
 													style: {padding: "0px 2px", position: "relative", height: "100%"},
 													onClick: event => {
 														let rects = BDFDB.DOMUtils.getRects(BDFDB.DOMUtils.getParent(BDFDB.dotCN.colorpickerhuehorizontal, event.target));
-														this.handleColorChange(BDFDB.ColorUtils.convert([BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 360], event.clientX), s, l, a], hslFormat));
+														this.handleColorChange(BDFDB.ColorUtils.convert([BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 360], event.clientX), s, v, a], colorFormat, "HSVCOMP"));
 													},
 													onMouseDown: event => {
 														let rects = BDFDB.DOMUtils.getRects(BDFDB.DOMUtils.getParent(BDFDB.dotCN.colorpickerhuehorizontal, event.target));
@@ -5178,7 +5389,7 @@ module.exports = (_ => {
 															document.removeEventListener("mousemove", mouseMove);
 														};
 														let mouseMove = event2 => {
-															this.handleColorChange(BDFDB.ColorUtils.convert([BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 360], event2.clientX), s, l, a], hslFormat));
+															this.handleColorChange(BDFDB.ColorUtils.convert([BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 360], event2.clientX), s, v, a], colorFormat, "HSVCOMP"));
 														};
 														document.addEventListener("mouseup", mouseUp);
 														document.addEventListener("mousemove", mouseMove);
@@ -5212,10 +5423,10 @@ module.exports = (_ => {
 													style: {position: "absolute", top: 0, right: 0, bottom: 0, left: 0},
 													children: BDFDB.ReactUtils.createElement("div", {
 														className: BDFDB.disCN.colorpickeralphahorizontal,
-														style: {padding: "0px 2px", position: "relative", height: "100%", background: `linear-gradient(to right, ${BDFDB.ColorUtils.setAlpha([h, s, l], 0, "RGBA")}, ${BDFDB.ColorUtils.setAlpha([h, s, l], 1, "RGBA")}`},
+														style: {padding: "0px 2px", position: "relative", height: "100%", background: `linear-gradient(to right, ${BDFDB.ColorUtils.setAlpha([h, s, v], 0, "RGBA")}, ${BDFDB.ColorUtils.setAlpha([h, s, v], 1, "RGBA")}`},
 														onClick: event => {
 															let rects = BDFDB.DOMUtils.getRects(BDFDB.DOMUtils.getParent(BDFDB.dotCN.colorpickeralphahorizontal, event.target));
-															this.handleColorChange(BDFDB.ColorUtils.setAlpha([h, s, l], BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 1], event.clientX), hslFormat));
+															this.handleColorChange(BDFDB.ColorUtils.setAlpha([h, s, v], BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 1], event.clientX), colorFormat));
 														},
 														onMouseDown: event => {
 															let rects = BDFDB.DOMUtils.getRects(BDFDB.DOMUtils.getParent(BDFDB.dotCN.colorpickeralphahorizontal, event.target));
@@ -5227,7 +5438,7 @@ module.exports = (_ => {
 															};
 															let mouseMove = event2 => {
 																this.state.draggingAlphaCursor = true;
-																this.handleColorChange(BDFDB.ColorUtils.setAlpha([h, s, l], BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 1], event2.clientX), hslFormat));
+																this.handleColorChange(BDFDB.ColorUtils.setAlpha([h, s, v], BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0, 1], event2.clientX), colorFormat));
 															};
 															document.addEventListener("mouseup", mouseUp);
 															document.addEventListener("mousemove", mouseMove);
@@ -5269,7 +5480,7 @@ module.exports = (_ => {
 															let rects = BDFDB.DOMUtils.getRects(event.target);
 															let pos = BDFDB.NumberUtils.mapRange([rects.left, rects.left + rects.width], [0.01, 0.99], event.clientX);
 															if (Object.keys(this.props.color).indexOf(pos) == -1) {
-																this.props.color[pos] = BDFDB.ColorUtils.convert("#000000FF", hslFormat);
+																this.props.color[pos] = BDFDB.ColorUtils.convert("#000000FF", colorFormat);
 																this.state.selectedGradientCursor = pos;
 																this.handleColorChange();
 															}
@@ -6761,7 +6972,7 @@ module.exports = (_ => {
 						return BDFDB.ReactUtils.createElement(Internal.LibraryComponents.Flex, {
 							className: this.props.className,
 							wrap: Internal.LibraryComponents.Flex.Wrap.WRAP,
-							children: [this.props.includeDMs && {name: BDFDB.LanguageUtils.LanguageStrings.DIRECT_MESSAGES, acronym: "DMs", id: Internal.DiscordConstants.ME, getIconURL: _ => {}}].concat(Internal.LibraryModules.SortedGuildUtils.getFlattenedGuilds()).filter(n => n).map(guild => BDFDB.ReactUtils.createElement(Internal.LibraryComponents.TooltipContainer, {
+							children: [this.props.includeDMs && {name: BDFDB.LanguageUtils.LanguageStrings.DIRECT_MESSAGES, acronym: "DMs", id: Internal.DiscordConstants.ME, getIconURL: _ => {}}].concat(Internal.LibraryStores.SortedGuildStore.getFlattenedGuildIds().map(Internal.LibraryStores.GuildStore.getGuild)).filter(n => n).map(guild => BDFDB.ReactUtils.createElement(Internal.LibraryComponents.TooltipContainer, {
 								text: guild.name,
 								children: BDFDB.ReactUtils.createElement("div", {
 									className: BDFDB.DOMUtils.formatClassName(this.props.guildClassName, BDFDB.disCN.settingsguild, this.props.disabled.includes(guild.id) && BDFDB.disCN.settingsguilddisabled),
@@ -7823,8 +8034,8 @@ module.exports = (_ => {
 				}
 				LibraryComponents.MenuItems = new Proxy(RealFilteredMenuItems.reduce((a, v) => ({ ...a, [v]: v}), {}) , {
 					get: function (_, item) {
-						if (RealMenuItems[item]) return RealMenuItems[item];
 						if (CustomComponents.MenuItems[item]) return CustomComponents.MenuItems[item];
+						if (RealMenuItems[item]) return RealMenuItems[item];
 						if (MappedMenuItems[item] && RealMenuItems[MappedMenuItems[item]]) return RealMenuItems[MappedMenuItems[item]];
 						return null;
 					}
@@ -8071,6 +8282,9 @@ module.exports = (_ => {
 				};
 				Internal.processMemberListItem = function (e) {
 					Internal._processAvatarMount(e.instance.props.user, e.node.querySelector(BDFDB.dotCN.avatarwrapper), e.node);
+				};
+				Internal.processMenu = function (e) {
+					if (!e.instance.props.children || BDFDB.ArrayUtils.is(e.instance.props.children) && !e.instance.props.children.length) Internal.LibraryModules.ContextMenuUtils.closeContextMenu();
 				};
 				Internal.processMessageActionsContextMenu = function (e) {
 					e.instance.props.updatePosition = _ => {};
