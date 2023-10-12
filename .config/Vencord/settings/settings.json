@@ -83,7 +83,7 @@
             "enabled": false
         },
         "BetterUploadButton": {
-            "enabled": false
+            "enabled": true
         },
         "BiggerStreamPreview": {
             "enabled": false
@@ -116,7 +116,7 @@
             "enabled": false
         },
         "DisableDMCallIdle": {
-            "enabled": false
+            "enabled": true
         },
         "EmoteCloner": {
             "enabled": true
@@ -176,10 +176,18 @@
             "enabled": false
         },
         "ImageZoom": {
-            "enabled": true
+            "enabled": true,
+            "size": 100,
+            "zoom": 1.7349999999999999,
+            "nearestNeighbour": false,
+            "square": false,
+            "zoomSpeed": 0.5,
+            "saveZoomValues": true,
+            "invertScroll": true
         },
         "InvisibleChat": {
-            "enabled": true
+            "enabled": false,
+            "savedPasswords": "password, Password"
         },
         "KeepCurrentChannel": {
             "enabled": false
@@ -281,7 +289,9 @@
             "enabled": false
         },
         "PermissionsViewer": {
-            "enabled": true
+            "enabled": true,
+            "permissionsSortOrder": 0,
+            "defaultPermissionsDropdownState": false
         },
         "petpet": {
             "enabled": false
@@ -364,7 +374,8 @@
         "ShowHiddenChannels": {
             "enabled": true,
             "showMode": 0,
-            "hideUnreads": true
+            "hideUnreads": true,
+            "defaultAllowedUsersAndRolesDropdownState": true
         },
         "ShowMeYourName": {
             "enabled": false
@@ -373,11 +384,13 @@
             "enabled": false
         },
         "SilentMessageToggle": {
-            "enabled": false
+            "enabled": false,
+            "persistState": false,
+            "autoDisable": true
         },
         "SilentTyping": {
             "enabled": true,
-            "showIcon": false,
+            "showIcon": true,
             "isEnabled": true
         },
         "SortFriendRequests": {
@@ -444,16 +457,18 @@
             "enabled": false
         },
         "ViewIcons": {
-            "enabled": false
+            "enabled": true,
+            "format": "webp",
+            "imgSize": "1024"
         },
         "ViewRaw": {
             "enabled": false
         },
         "VoiceMessages": {
-            "enabled": false
+            "enabled": true
         },
         "VolumeBooster": {
-            "enabled": false
+            "enabled": true
         },
         "WhoReacted": {
             "enabled": false
@@ -472,6 +487,6 @@
         "authenticated": false,
         "url": "https://api.vencord.dev/",
         "settingsSync": false,
-        "settingsSyncVersion": 1697143549964
+        "settingsSyncVersion": 1697144944701
     }
 }
