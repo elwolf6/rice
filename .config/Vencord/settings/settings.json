@@ -280,7 +280,10 @@
             "enabled": false
         },
         "OpenInApp": {
-            "enabled": true
+            "enabled": false,
+            "spotify": true,
+            "steam": true,
+            "epic": true
         },
         "Party mode 🎉": {
             "enabled": false
@@ -487,6 +490,6 @@
         "authenticated": false,
         "url": "https://api.vencord.dev/",
         "settingsSync": false,
-        "settingsSyncVersion": 1697145173792
+        "settingsSyncVersion": 1697157101568
     }
 }
