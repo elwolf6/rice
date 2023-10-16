@@ -21,6 +21,8 @@ alias \
 	yt="yt-dlp --embed-metadata -i" \
 	yta="yt -x -f bestaudio/best --audio-format mp3" \
 	ffmpeg="ffmpeg -hide_banner"\
+	rsync="rsync --progress -vrc" \
+	msync="rsync -vrc --progress --perms --chmod=g+rw,u+rw"
 
 # Colorize commands when possible.
 alias \
@@ -40,10 +42,11 @@ alias \
 	e="$EDITOR" \
 	v="$EDITOR" \
 	p="sudo pacman" \
-	z="zathura"
+	z="zathura" \
+	anaconda="source ~/.config/zsh/anaconda"
 
 alias \
 	lf="lfub" \
 	magit="nvim -c MagitOnly" \
 	ref="shortcuts >/dev/null; source ${XDG_CONFIG_HOME:-$HOME/.config}/shell/shortcutrc ; source ${XDG_CONFIG_HOME:-$HOME/.config}/shell/zshnameddirrc" \
-	weath="less -S ${XDG_DATA_HOME:-$HOME/.local/share}/weatherreport" \
+	weath="less -S ${XDG_DATA_HOME:-$HOME/.local/share}/weatherreport"
